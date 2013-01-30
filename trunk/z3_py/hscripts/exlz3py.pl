@@ -12,7 +12,7 @@ while (my $line = <$fh>) {
 	$HoH{$3}{$5} = 1;
     }
 }
-
+$defaultxor;
 for $source (sort keys %HoH) {
     for $dest (sort keys %{ $HoH{$source} } ){
 	if ($source eq $dest){ #cycle detected
@@ -22,24 +22,65 @@ for $source (sort keys %HoH) {
 	    $HoH{$source}{$newSource} = 1;
 	    $HoH{$newSource}{$source} = 1;
 	} #end cycle fix
+	else{
+	    $defaultxor = "($source ^ $dest)";
+	}
     }
 }
 
-##############################################################
+
+print "from z3 import *\n";
+
+print(join(', ',sort keys %HoH)," = BitVecs(\'");
+print(join(' ',sort keys %HoH),"\',8)\n\n");
+
+print "s = Solver();\ns.add(Distinct(";
+print(join(',',sort keys %HoH),"))\n\n");
+
+
 for $source (sort keys %HoH) {
-    print "\n$source: ";
     for $dest (sort keys %{ $HoH{$source} } ){
-	print " $dest ";
+	print addRule($source , $dest, 8);
+	print addRule("($source ^ $dest)", $defaultxor, 8);
     }
 }
-print "\n";
+
+print <<"EOT";
+
+if(s.check() == sat):
+  m = s.model()
+  for d in m.decls():
+      print "%s, %s" % (d.name(), m[d])
+EOT
+
+##############################################################
+#for $source (sort keys %HoH) {
+#    print "\n$source: ";
+#    for $dest (sort keys %{ $HoH{$source} } ){
+#	print " $dest ";
+#    }
+#}
+#print "\n";
+
+
+
 
 #############################################################
 
-sub add
+sub addRule
 {
-   ($numbera, $numberb) = @_;
+   ($term1, $term2, $bits) = @_;
+   $rule = "s.add(\n";
+   $rule .= printHam($term1, $bits);
+   $rule .= " ==\n";
+   $rule .= printHam($term2, $bits);
+   $rule .= "\n)\n";
+   return $rule;
+}
 
-   $result = $numbera + $numberb;
-   print "The result was: $result\n";
+
+sub printHam
+{
+    ($term, $bits) = @_;
+    return "Sum([(($term & (2**(i)))/(2**(i))) for i in range($bits)])";
 }
