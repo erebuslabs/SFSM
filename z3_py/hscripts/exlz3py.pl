@@ -13,6 +13,7 @@ while (my $line = <$fh>) {
     }
 }
 $defaultxor;
+$count = 0;
 for $source (sort keys %HoH) {
     for $dest (sort keys %{ $HoH{$source} } ){
 	if ($source eq $dest){ #cycle detected
@@ -21,36 +22,49 @@ for $source (sort keys %HoH) {
 	    %{$HoH{$newSource}} = %{$HoH{$source}};
 	    $HoH{$source}{$newSource} = 1;
 	    $HoH{$newSource}{$source} = 1;
+	    $count = $ count+1;
 	} #end cycle fix
 	else{
-	    $defaultxor = "($source ^ $dest)";
+	    $defaultxor = "($source ^ $dest)";	    
 	}
     }
+    $count = $ count+1;
 }
 
 
 print "from z3 import *\n";
-
+print "from math import *\n";
+print "for bits in range(int(ceil(log($count)/log(2))), $count):\n";
+print "\t";
 print(join(', ',sort keys %HoH)," = BitVecs(\'");
-print(join(' ',sort keys %HoH),"\',8)\n\n");
 
-print "s = Solver();\ns.add(Distinct(";
+print(join(' ',sort keys %HoH),"\',bits)\n\n");
+
+print "\ts = Solver();\n\ts.add(Distinct(";
 print(join(',',sort keys %HoH),"))\n\n");
 
 
 for $source (sort keys %HoH) {
     for $dest (sort keys %{ $HoH{$source} } ){
-	print addRule($source , $dest, 8);
-	print addRule("($source ^ $dest)", $defaultxor, 8);
+	print addRule($source , $dest, bits);
+	print addRule("($source ^ $dest)", $defaultxor, bits);
     }
 }
 
 print <<"EOT";
 
-if(s.check() == sat):
-  m = s.model()
-  for d in m.decls():
-      print "%s, %s" % (d.name(), m[d])
+        if(s.check() == sat):
+          print "Sat, %d," %(bits),
+          m = s.model()
+          for d in m.decls():
+              print "%s," % (d.name()),
+          print " "
+          print "ASSIGN, %d," %(bits),
+          for d in m.decls():
+              print "%s," % (m[d]),
+        else:
+           print "NotSat, %d, " %(bits),
+        print " "
 EOT
 
 ##############################################################
@@ -70,11 +84,11 @@ EOT
 sub addRule
 {
    ($term1, $term2, $bits) = @_;
-   $rule = "s.add(\n";
+   $rule = "\ts.add(\n";
    $rule .= printHam($term1, $bits);
    $rule .= " ==\n";
    $rule .= printHam($term2, $bits);
-   $rule .= "\n)\n";
+   $rule .= "\n\t)\n";
    return $rule;
 }
 
@@ -82,5 +96,5 @@ sub addRule
 sub printHam
 {
     ($term, $bits) = @_;
-    return "Sum([(($term & (2**(i)))/(2**(i))) for i in range($bits)])";
+    return "\tSum([(($term & (2**(i)))/(2**(i))) for i in range($bits)])";
 }
