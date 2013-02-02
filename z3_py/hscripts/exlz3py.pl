@@ -64,7 +64,8 @@ print <<"EOT";
           for d in m.decls():
               print "%s," % (m[d]),
         else:
-           print "NotSat, %d,\n" %(bits),
+           print "NotSat, %d," %(bits),
+           print " "
            break
         print " "
 EOT
