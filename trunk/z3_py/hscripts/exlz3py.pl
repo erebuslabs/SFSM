@@ -34,7 +34,8 @@ for $source (sort keys %HoH) {
 
 print "from z3 import *\n";
 print "from math import *\n";
-print "for bits in range(int(ceil(log($count)/log(2))), $count):\n";
+print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
+#print "for bits in range($count-1, $count):\n";
 print "\t";
 print(join(', ',sort keys %HoH)," = BitVecs(\'");
 
@@ -63,7 +64,8 @@ print <<"EOT";
           for d in m.decls():
               print "%s," % (m[d]),
         else:
-           print "NotSat, %d, " %(bits),
+           print "NotSat, %d,\n" %(bits),
+           break
         print " "
 EOT
 

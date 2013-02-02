@@ -28,12 +28,8 @@ while (my $line = <$fh>) {
 	    foreach $key (sort keys %hash){
 		print "$key, ";
 	    }
-
 	    print "\n";
-#	    print $not_stat;
-
 	    $flag = 0;
-
 	}
 	print "$info[1], ";
 	foreach $key (sort keys %hash){
@@ -42,14 +38,12 @@ while (my $line = <$fh>) {
 	print "\n";
 	print "$info[1], ";
 	foreach $key (sort keys %hash){
+	    #Yes I know what I'm doing, leave me alone =)
 	    $binStr = substr(unpack("B32", pack("N", $hash{$key})), -1*$info[1]);
 	    print "0b$binStr, ";
-	  #  printf "%#b, ", ($hash{$key});
 	}
 	print "\n";
     }
-#    print "\n";
-
 }
 
 
