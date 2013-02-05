@@ -5,10 +5,12 @@ for file in $@; do
     pythres=$file".py"; 
     satres=$file".out";
     final=$file".csv";
-    echo "Converting the orginal file";
+    echo " "
+    echo "v=v=v==========$base=============v=v=v"
+    echo "Converting the $base file";
     ./hscripts/exlz3py.pl $base > $pythres
-    echo "Running Z3 theorem prover";
-    python $pythres > $satres;
+    echo "Running Z3 theorem prover on $pythres";
+    (time (timeout 600 python $pythres > $satres;)) 
     echo "Converting result to binary";
     ./hscripts/z3toBin.pl $satres > $final;
     echo "moving $pythres results/python/.";
@@ -17,6 +19,8 @@ for file in $@; do
     mv $satres results/raw/.;
     echo "moving $final results/final/.";
     mv $final results/final/.;
+    echo "^=^=^==========$base=============^=^=^"
+    echo " "
 done
 
 
