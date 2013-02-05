@@ -10,7 +10,7 @@ for file in $@; do
     echo "Converting the $base file";
     ./hscripts/exlz3py.pl $base > $pythres
     echo "Running Z3 theorem prover on $pythres";
-    (time (timeout 600 python $pythres > $satres;)) 
+    (time (timeout 1600 python $pythres > $satres;)) 2>&1
     echo "Converting result to binary";
     ./hscripts/z3toBin.pl $satres > $final;
     echo "moving $pythres results/python/.";
