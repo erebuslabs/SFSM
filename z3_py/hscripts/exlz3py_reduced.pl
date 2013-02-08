@@ -34,7 +34,7 @@ for $source (sort keys %HoH) {
 
 print "from z3 import *\n";
 print "from math import *\n";
-print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
+print "for bits in range(($count), int(ceil(log($count)/log(2))), -1):\n";
 #print "for bits in range($count-1, $count):\n";
 print "\t";
 print(join(', ',sort keys %HoH)," = BitVecs(\'");
@@ -42,7 +42,7 @@ print(join(', ',sort keys %HoH)," = BitVecs(\'");
 print(join(' ',sort keys %HoH),"\',bits)\n\n");
 
 print "\ts = Solver();\n";
-print "\ts.set(\"timeout\", 30000)\n";
+#print "\ts.set(\"timeout\", 900000)\n";
 print "\ts.add(Distinct(";
 print(join(',',sort keys %HoH),"))\n\n");
 
