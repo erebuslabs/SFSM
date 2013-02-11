@@ -19,7 +19,7 @@ for file in $@; do
     echo "=Converting the $secfile file to  $sgv";
     ./hscripts/exl2dot.pl $secfile > $sgv;
     echo "Converting $gv to $dot";
-    neato -Tpng $gv -o $dot 
+    dot -Tpng $gv -o $dot 
 
     echo "Converting $sgv to $sdot";
     dot -Tpng $sgv -o $sdot 
