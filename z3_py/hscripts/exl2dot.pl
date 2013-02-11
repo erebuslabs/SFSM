@@ -27,12 +27,22 @@ print "#Total states is $count, including $origcount states and $newcount newsta
 print "#Total transisions is $tran, including $origtran transistions and $newtran new transitions\n";
 print "digraph finite_state_machine {\n";
 print "\trankdir=LR;\n";
-print "\tsize=\"8,5\"\n";
-print "\tnode [shape = circle];\n\t";
+#print "\tsize=\"8,8\";\n";
+
+print "\toverlap=false;\n";
+print "\n\tnode [shape = circle, fixedsize=true, width = 1, color = red, style = filled];\n";
 for $source (sort keys %HoH) {
-    print "$source ";
+    if(substr($source,-2, 2) eq '_n'){
+	print "\t$source;\n ";
+    }
 }
-print ";\n";
+#print ";\n";
+print "\n\tnode [shape = circle, color = black, style = unfilled];\n";
+for $source (sort keys %HoH) {
+    if(substr($source,-2, 2) ne '_n'){
+	print "\t$source;\n ";
+    }
+}
 
 for $source (sort keys %HoH) {
     for $dest (sort keys %{ $HoH{$source} } ){
