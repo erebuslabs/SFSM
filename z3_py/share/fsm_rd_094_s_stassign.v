@@ -1,0 +1,11 @@
+	parameter  st3 =  5'b10011;
+	parameter  st5 =  5'b01110;
+	parameter  st6 =  5'b11100;
+	parameter  st4 =  5'b10110;
+	parameter  st7 =  5'b11001;
+	parameter  st2 =  5'b01011;
+	parameter  st2_n =  5'b11010;
+	parameter  st1 =  5'b01101;
+	parameter    =  5'b00000;
+	reg[4:0] State;
+	reg[4:0] NextState;
