@@ -27,7 +27,8 @@ print "#Total states is $count, including $origcount states and $newcount newsta
 print "#Total transisions is $tran, including $origtran transistions and $newtran new transitions\n";
 print "digraph finite_state_machine {\n";
 print "\trankdir=LR;\n";
-#print "\tsize=\"8,8\";\n";
+print "\tsize=\"20,20\";\n";
+print "\tresolution=\"300\";\n";
 
 print "\toverlap=false;\n";
 print "\n\tnode [shape = circle, fixedsize=true, width = 1, color = red, style = filled];\n";
