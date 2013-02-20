@@ -17,7 +17,7 @@ while (my $line = <$fh>) {
 #    chomp $cline;
     if($cline =~ m/(\S+|[\-]+)(\s+)(\S+)(\s+)(\S+)(\s|\s+)(\S+)/g ){
   	push(@data, ($3,$5,$1,"$7"));
-	print "$7 \n";
+#	print "$7 \n";
 	$inputlen = $1;
 	$outputlen = $7;
     }
