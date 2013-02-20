@@ -1,0 +1,49 @@
+0 
+- 
+- 
+1 
+1 
+1 
+1 
+1 
+1 
+1 
+1 
+1 
+1 
+- 
+00	st0	st0_n	0
+10	st0	st1	-
+01	st0	st1	-
+00	st0_n	st0	0
+10	st0_n	st1	-
+01	st0_n	st1	-
+10	st1	st1_n	1
+01	st1	st1_n	1
+00	st1	st2	1
+11	st1	st2	1
+10	st1_n	st1	1
+01	st1_n	st1	1
+00	st1_n	st2	1
+11	st1_n	st2	1
+00	st2	st2_n	1
+11	st2	st2_n	1
+01	st2	st3	1
+10	st2	st3	1
+00	st2_n	st2	1
+11	st2_n	st2	1
+01	st2_n	st3	1
+10	st2_n	st3	1
+10	st3	st3_n	1
+01	st3	st3_n	1
+00	st3	st0	-
+10	st3_n	st3	1
+01	st3_n	st3	1
+00	st3_n	st0	-
+.i 2
+.o 1
+.p 28
+.s 8
+
+
+.e 

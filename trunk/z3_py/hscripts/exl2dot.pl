@@ -21,7 +21,7 @@ $count = $newcount = $origcount = 0;
 $tran = $newtran = $origtran = 0;
 
 $count = $origcount + $newcount;
-$tran = $origtran + $newtran;
+$tran = $origtran + $newtran-$newcount;
 
 print "#Total states is $count, including $origcount states and $newcount newstates\n";
 print "#Total transisions is $tran, including $origtran transistions and $newtran new transitions\n";

@@ -11,35 +11,45 @@ my @data;
 my $trans = 0;
 my $state = 0;
 my $inputlen, $outputlen;
+
 while (my $line = <$fh>) {
     $cline = $line;
 #    chomp $cline;
-    if($cline =~ m/(\S+|[\-]+)(\s+)(\S+)(\s+)(\S+)(\s+)(\S+)/g ){
-  	push(@data, ($3,$5,$1,$7));
+    if($cline =~ m/(\S+|[\-]+)(\s+)(\S+)(\s+)(\S+)(\s|\s+)(\S+)/g ){
+  	push(@data, ($3,$5,$1,"$7"));
+	print "$7 \n";
 	$inputlen = $1;
 	$outputlen = $7;
-
     }
 }
 
 my $flag = 0;
-my $currSourceState = "st1"; 
+my $currSourceState = @data[0];#"st1"; 
+
 my (@dest_list, @in_list, @out_list);
 
+my ($source, $dest, $input, $outputa);
+my $end; 
+
 for (my $idx = 0; $idx < $#data+1; $idx=$idx+4){
-    my ($source, $dest, $input, $output) = @data[$idx..$idx+3];
-    # print "($source, $dest, $input, $output) \n";
+   $end = $idx+3;
+   ($source, $dest, $input, $outputa) = @data[$idx..$end];
+   # print("$output\n");
+ #   print "($source, $dest, $input, $outputa) \n";
+
     if($source eq $currSourceState){
 	#create matrix
-	if($source eq $dest){$flag = 1;}
+#	print "$source ; $dest ; $input ; $outputa)\n";
+	if($source eq $dest){
+	    $flag = 1;
+	}
 	push(@dest_list, $dest);
 	push(@in_list, $input);
-	push(@out_list, $output);
+	push(@out_list, $outputa);
     }
     else{
 	$state++;
 	#new state check if we need to duplicate all the previous ones
-	
 	if($flag == 1){
 	    $state++;
 	    my $sourceLen = $#dest_list+1;
@@ -64,12 +74,12 @@ for (my $idx = 0; $idx < $#data+1; $idx=$idx+4){
 		$trans++;
 	    }
 	}
-	
+#	print "****** Setting currSourceState to $source *******\n";
 	$currSourceState = $source;	
 	@dest_list =  $dest;
 	@in_list = $input;
-	@out_list, $output;
-	
+	@out_list = $outputa;
+	if($source eq $dest){ $flag = 1;}
     }
 }
 

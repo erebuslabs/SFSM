@@ -51,7 +51,7 @@ while (my $line = <$fh>) {
 	    $key = substr($ivec,$i,1);
 	    if($key ne '-'){
 		if($needed == 1){ $switch_clause .= " && ";}
-		$switch_clause .= "\$ptext[$i] == $key ";
+		$switch_clause .= "ptext[$i] == $key ";
 		$needed = 1;
 	    }
 #	    
