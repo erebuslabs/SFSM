@@ -13,12 +13,12 @@ for file in $@; do
     (time (timeout 1600 python $pythres > $satres;)) 2>&1
     echo "Converting result to binary";
     ./hscripts/z3toBin.pl $satres > $final;
-    echo "moving $pythres results/python/.";
-    mv $pythres results/python/.;
+    echo "moving $pythres isvlis/results/python/.";
+    mv $pythres isvlsi/results/python/.;
     echo "moving $satres results/raw/.";
-    mv $satres results/raw/.;
+    mv $satres isvlsi/results/raw/.;
     echo "moving $final results/final/.";
-    mv $final results/final/.;
+    mv $final isvlsi/results/final/.;
     echo "^=^=^==========$base=============^=^=^"
     echo " "
 done

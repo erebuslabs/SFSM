@@ -1,0 +1,10 @@
+Sat, 7, st_st2_n, st_st3_n, st_st0, st_st2, st_st1_n, st_st0_n, st_st1, st_st3,  
+ASSIGN, 7, 13, 38, 42, 28, 52, 41, 56, 14,  
+Sat, 6, st_st2_n, st_st3_n, st_st0, st_st2, st_st1_n, st_st0_n, st_st1, st_st3,  
+ASSIGN, 6, 24, 40, 17, 33, 18, 34, 12, 6,  
+Sat, 5, st_st2_n, st_st3_n, st_st0, st_st2, st_st1_n, st_st0_n, st_st1, st_st3,  
+ASSIGN, 5, 5, 10, 12, 20, 17, 9, 24, 6,  
+NotSat, 4,  
+ 
+NotSat, 3,  
+ 
