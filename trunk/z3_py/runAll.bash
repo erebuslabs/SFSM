@@ -1,7 +1,7 @@
 #/usr/bin/bash
 
 for file in $@; do
-    base=$file"/data.exl" ;
+    base=$file;#"/data.exl" ;
     pythres=$file".py"; 
     satres=$file".out";
     final=$file".csv";
