@@ -1,0 +1,32 @@
+#Total states is 0, including 0 states and 0 newstates
+#Total transisions is 0, including 0 transistions and 0 new transitions
+digraph finite_state_machine {
+	rankdir=LR;
+	size="20,20";
+	resolution="300";
+	overlap=false;
+
+	node [shape = circle, fixedsize=true, width = 1, color = red, style = filled];
+
+	node [shape = circle, color = black, style = unfilled];
+	START;
+ 	state2;
+ 	state3;
+ 	state4;
+ 	state5;
+ 	state6;
+ 	state7;
+ 	START -> state4;
+	START -> state6;
+	state2 -> state3;
+	state2 -> state5;
+	state3 -> state5;
+	state3 -> state7;
+	state4 -> state6;
+	state5 -> START;
+	state5 -> state2;
+	state6 -> START;
+	state6 -> state2;
+	state7 -> state5;
+	state7 -> state6;
+}

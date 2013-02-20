@@ -1,0 +1,79 @@
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0 
+0	st0	st0_n	0
+1	st0	st1	0
+0	st0_n	st0	0
+1	st0_n	st1	0
+0	st1	st1_n	0
+1	st1	st2	0
+0	st1_n	st1	0
+1	st1_n	st2	0
+0	st2	st2_n	0
+1	st2	st3	0
+0	st2_n	st2	0
+1	st2_n	st3	0
+0	st3	st3_n	0
+1	st3	st4	0
+0	st3_n	st3	0
+1	st3_n	st4	0
+0	st4	st4_n	0
+1	st4	st5	0
+0	st4_n	st4	0
+1	st4_n	st5	0
+0	st5	st5_n	0
+1	st5	st6	0
+0	st5_n	st5	0
+1	st5_n	st6	0
+0	st6	st6_n	0
+1	st6	st7	0
+0	st6_n	st6	0
+1	st6_n	st7	0
+0	st7	st7_n	0
+1	st7	st8	0
+0	st7_n	st7	0
+1	st7_n	st8	0
+0	st8	st8_n	0
+1	st8	st9	0
+0	st8_n	st8	0
+1	st8_n	st9	0
+0	st9	st9_n	0
+1	st9	st10	0
+0	st9_n	st9	0
+1	st9_n	st10	0
+0	st10	st10_n	0
+1	st10	st11	0
+0	st10_n	st10	0
+1	st10_n	st11	0
+0	st11	st11_n	0
+1	st11	st0	0
+0	st11_n	st11	0
+1	st11_n	st0	0
+.i 1
+.o 1
+.p 48
+.s 24
+
+
+.e 
