@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+use List::MoreUtils qw/ uniq /;
 
 my $filename = $ARGV[0];
 
@@ -6,53 +7,56 @@ open(my $fh, '<:encoding(UTF-8)', $filename)
     or die "Could not open file '$filename' $!";
 
 my (%HoH); 
+my @states, @trans;
+my $defaultxor;
 while (my $line = <$fh>) {
     chomp $line;
     if($line =~ m/(\S+)(\s+)(\S+)(\s+)(\S+)(\s+)(\S+)/g ){
-	$HoH{$3}{$5} = 1;
-    }
-}
-$defaultxor;
-$count = 0;
-for $source (sort keys %HoH) {
-    for $dest (sort keys %{ $HoH{$source} } ){
-	if ($source eq $dest){ #cycle detected
-	    delete($HoH{$source}{$source});
-	    $newSource = $source."_n";
-	    %{$HoH{$newSource}} = %{$HoH{$source}};
-	    $HoH{$source}{$newSource} = 1;
-	    $HoH{$newSource}{$source} = 1;
-	    $count = $count+1;
-	} #end cycle fix
-	else{
+#	$HoH{$3}{$5} = 1;
+	($source, $dest) = ($3, $5);
+	if($source+0 == $source){
+	    $source = "st_$source";
+	}
+	if($dest+0 == $dest){
+	    $dest = "st_$dest";
+	}
+	push(@states, ($source, $dest));
+	push(@trans, "$source:$dest");
+	if($source ne $dest){
 	    $defaultxor = "($source ^ $dest)";	    
 	}
-    }
-    $count = $count+1;
+   }
 }
+
+@states = uniq(@states);
+@trans = uniq(@trans);
+$count = scalar(@states);
+
 
 
 print "from z3 import *\n";
 print "from math import *\n";
-print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
+print "for bits in range(int(ceil(log($count)/log(2))+4),  int(ceil(log($count)/log(2))-1), -1):\n";
+#print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
 #print "for bits in range($count-1, $count):\n";
 print "\t";
-print(join(', ',sort keys %HoH)," = BitVecs(\'");
 
-print(join(' ',sort keys %HoH),"\',bits)\n\n");
+
+print(join(', ',@states)," = BitVecs(\'");
+print(join(' ', @states),"\',bits)\n\n");
 
 print "\ts = Solver();\n";
 print "\ts.set(\"timeout\", 30000)\n";
 print "\ts.add(Distinct(";
-print(join(',',sort keys %HoH),"))\n\n");
 
+print(join(',',@states),"))\n\n");
 
-for $source (sort keys %HoH) {
-    for $dest (sort keys %{ $HoH{$source} } ){
-	print addRule($source , $dest, bits);
-	print addRule("($source ^ $dest)", $defaultxor, bits);
-    }
+foreach $sdpair (@trans){
+    ($source, $dest) = split(/:/, $sdpair);
+    print addRule($source , $dest, bits);
+    print addRule("($source ^ $dest)", $defaultxor, bits);
 }
+
 print <<"EOT";
         if(s.check() == sat):
           print "Sat, %d," %(bits),
@@ -69,18 +73,6 @@ print <<"EOT";
         print " "
         sys.stdout.flush()
 EOT
-
-##############################################################
-#for $source (sort keys %HoH) {
-#    print "\n$source: ";
-#    for $dest (sort keys %{ $HoH{$source} } ){
-#	print " $dest ";
-#    }
-#}
-#print "\n";
-
-
-
 
 #############################################################
 
@@ -99,5 +91,8 @@ sub addRule
 sub printHam
 {
     ($term, $bits) = @_;
-    return "\tSum([(($term & (2**(i)))/(2**(i))) for i in range($bits)])";
+#    $ceil = ceil(log($bits)/log(2))+1;
+#    return "\tSum([(($term & (2**(i)))/(2**(i))) for i in range(bits)])";
+   return "\tSum([ ZeroExt(int(ceil(log(bits)/log(2))+1), Extract(i,i,$term)) for i in range(bits) ])";
+
 }

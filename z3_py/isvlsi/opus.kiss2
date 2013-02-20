@@ -3,7 +3,7 @@
 .o 6 
 .p 22 
 .s 10
---1-- * init0 110000
+--1-- START init0 110000
 --1-- init0 init0 110000
 --0-- init0 init1 110000
 --00- init1 init1 110000
