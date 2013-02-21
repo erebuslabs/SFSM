@@ -38,8 +38,8 @@ $count = scalar(@states);
 print "from z3 import *\n";
 print "from math import *\n";
 
-#print "for bits in range(int(ceil(log($count)/log(2))+4),  int(ceil(log($count)/log(2))-1), -1):\n";
-print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
+print "for bits in range(int(ceil(log($count)/log(2))+8),  int(ceil(log($count)/log(2))-1), -1):\n";
+#print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
 #print "for bits in range($count-1, $count):\n";
 print "\t";
 
@@ -50,7 +50,7 @@ print(join(' ', @states),"\',bits)\n\n");
 #print "\tdefaultBV = BitVecVal(1, bits)\n";
 
 print "\ts = Solver();\n";
-print "\ts.set(\"timeout\", 3000000)\n";
+print "\ts.set(\"timeout\", 300000)\n";
 
 print "\ts.add(Distinct(";
 
@@ -58,9 +58,10 @@ print(join(',',@states),"))\n\n");
 
 foreach $sdpair (@trans){
     ($source, $dest) = split(/:/, $sdpair);
-    print addRule($source , $dest, bits);
+    #print addEqBitsRule($source, bits
+    print addEqHWRule($source , $dest, bits);
     if($source ne $dest){
-	print addRule("($source ^ $dest)", $defaultxor, bits);
+	print addEqBitsRule("($source ^ $dest)", 4 , bits);#$defaultxor, bits);
     }
 
 }
@@ -83,7 +84,7 @@ EOT
 
 #############################################################
 
-sub addRule
+sub addEqHWRule
 {
    ($term1, $term2, $bits) = @_;
    $rule = "\ts.add(\n";
@@ -94,6 +95,17 @@ sub addRule
    return $rule;
 }
 
+sub addEqBitsRule
+{
+   ($term1, $term2, $bits) = @_;
+   $rule = "\ts.add(\n";
+   $rule .= printHam($term1, $bits);
+   $rule .= " ==";
+ #  $rule .= printHam($term2, $bits);
+   $rule .= $term2;
+   $rule .= "\n\t)\n";
+   return $rule;
+}
 
 sub printHam
 {
