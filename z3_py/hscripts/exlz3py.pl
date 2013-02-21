@@ -24,6 +24,7 @@ while (my $line = <$fh>) {
 	push(@trans, "$source:$dest");
 	if($source ne $dest){
 	    $defaultxor = "($source ^ $dest)";	    
+#	    $defaultxor = "defaultBV";
 	}
    }
 }
@@ -36,8 +37,9 @@ $count = scalar(@states);
 
 print "from z3 import *\n";
 print "from math import *\n";
-print "for bits in range(int(ceil(log($count)/log(2))+4),  int(ceil(log($count)/log(2))-1), -1):\n";
-#print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
+
+#print "for bits in range(int(ceil(log($count)/log(2))+4),  int(ceil(log($count)/log(2))-1), -1):\n";
+print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
 #print "for bits in range($count-1, $count):\n";
 print "\t";
 
@@ -45,8 +47,11 @@ print "\t";
 print(join(', ',@states)," = BitVecs(\'");
 print(join(' ', @states),"\',bits)\n\n");
 
+#print "\tdefaultBV = BitVecVal(1, bits)\n";
+
 print "\ts = Solver();\n";
-print "\ts.set(\"timeout\", 30000)\n";
+print "\ts.set(\"timeout\", 3000000)\n";
+
 print "\ts.add(Distinct(";
 
 print(join(',',@states),"))\n\n");
@@ -54,9 +59,11 @@ print(join(',',@states),"))\n\n");
 foreach $sdpair (@trans){
     ($source, $dest) = split(/:/, $sdpair);
     print addRule($source , $dest, bits);
-    print addRule("($source ^ $dest)", $defaultxor, bits);
-}
+    if($source ne $dest){
+	print addRule("($source ^ $dest)", $defaultxor, bits);
+    }
 
+}
 print <<"EOT";
         if(s.check() == sat):
           print "Sat, %d," %(bits),
