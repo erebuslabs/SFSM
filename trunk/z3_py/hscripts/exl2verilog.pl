@@ -5,6 +5,12 @@ my $rawfname;
 if($filename =~ m/(fsm_rd_\d+[_s]*)/){
     $rawfname = $1;
 }
+elsif($filename =~ m/^(.+)\/(.+)\.kiss2(_s)*/){
+  $rawfname = $2.$3;
+}
+elsif($filename =~ m/^(.+)\.kiss2(_s)*/){
+    $rawfname = $1.$2;
+}
 else{
     $rawfname = "genfsm";
 }
@@ -17,8 +23,8 @@ $ibits = 0;
 
 my $switch_clause = "";
 my $moutput;
-my $currSourceState = "st0";
-my $newSourceState = "st";
+my $currSourceState = "";
+my $newSourceState = "b";
 my $dest ;
 while (my $line = <$fh>) {
     my $needed = 0;
@@ -36,7 +42,7 @@ while (my $line = <$fh>) {
 	$newSourceState = $source;
 
 	if($newSourceState ne $currSourceState){ 
-	    if($currSourceState ne "st0"){
+	    if($currSourceState ne ""){
 		$switch_clause .= "\t\trtext <= $numbits\'b$moutput;\n"; 
 		$switch_clause .= "\t  end\n";
 	    }
