@@ -11,11 +11,16 @@ open(my $fh, '<:encoding(UTF-8)', $filename)
 my (@line1, @line2, @line3, @states, @values) = ();
 
 while(my $lof =  <$fh>) {
-    chomp $lof;    
-    @line3 = @line2;
-    @line2 = @line1;
-    @line1 = split(/,/ , $lof);
+#    print "-->$lof\n";
+#    print $lof;
+    chomp ($lof);    
+    if(substr($lof, 0,6) ne "NotSat" && (substr($lof,0,6) eq "ASSIGN" || substr($lof,0,3) eq "Sat"))    {
 
+	@line3 = @line2;
+	@line2 = @line1;
+	@line1 = split(/\,/ , $lof);
+#	print (@line1) . "\n";
+    }
 }#end parse by line
 
 
@@ -39,7 +44,7 @@ elsif(length(@line1)== length(@line2) && $line1[1]==$line2[1]){
     @values = @line1;
     @states = @line2;
 }
-elsif(length(@line2)== length(@line3) && $line2[1]==$line3[1]){
+elsif(length(@line2) == length(@line3) && $line2[1]==$line3[1]){
   #  print "l2 and l3 have ".(scalar(@line2)-3)." states\n";
   #  print (@line2);
   #  print "\n";
@@ -49,7 +54,7 @@ elsif(length(@line2)== length(@line3) && $line2[1]==$line3[1]){
     @states = @line3;
 }
 
-for($i = 2; $i < scalar(@states); $i++){
+for($i = 2; $i < scalar(@states)-1; $i++){
     $bineqv = $values[$i];
     $bineqv = substr(unpack("B32", pack("N", $values[$i])), -1*$values[1]);
     print "\tparameter $states[$i] = $values[1]\'b$bineqv;\n";
