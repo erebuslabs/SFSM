@@ -20,6 +20,7 @@ while (my $line = <$fh>) {
     chomp $cline;
     if($cline =~ m/(\S+)(\s+)(\S+)(\s+)(\S+)(\s+)(\S+)/g ){
 	my $needed = 0;
+
 	$ibits = length($1)-1;
 	$obits = length($7)-1;
 	push @{$HoH{$3}{$5}}, ($1, $7);
@@ -69,21 +70,23 @@ foreach (@states){
     print $_, " ";
 }
 print ");\n";
-print "\$currState = st1;\n";
+print "\$currState = 0;\n";
 print "#Open Data File from command line\n";
 print "my \$filename = \$ARGV[0];\n";
-print "local \$\/ = undef;\n";
-print "open my \$fh, \"<\", \$filename;\n";
-print "my \$data = <\$fh>;\n";
-print "close(FILE);\n";
+
+print "open  (fh, \"<\", \$filename);\n";
+
+
+
 print "#every $ibits+1 are used as a single round input\n";
 
 print "my \@inputs = (\$data =~ \/";
-print "." x ($ibits+1);
+print "(\d)\s*" x ($ibits+1);
 print "\/g);\n";
 
-print "foreach \$temp (\@inputs) {\n";
-print "\@ptext = split(\/\/,\$temp);\n";
+print "foreach \$temp (\<fh\>) {\n";
+print "chomp(\$temp);\n";
+print "\@ptext = split(\' \',\$temp);\n";
 #print "print \"\@ptext\\t\";\n";
 print "print \"\$currState\\t\";\n";
 print "my \$nextState = \$currState;\n";
@@ -94,5 +97,5 @@ print $switch_clause;
 print "print \"\$trans\\n\";\n";
 print "\t\$currState = \$nextState;\n";
 print "}#endwhile\n";
-
+print "close(FILE);\n";
 
