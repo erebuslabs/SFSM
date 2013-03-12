@@ -1,10 +1,39 @@
 #!/usr/bin/perl
 
 use List::MoreUtils qw/ uniq /;
+use File::ReadBackwards;
+
+
+
+#print $#ARGV ;
+#if($#ARGV != 0 || $#ARGV !=1 ){
+#    print "usage: exl2oracle.pl fsm.kiss2 [encoding]\n";
+#    exit;
+#}
+my $encfile = "";
+if($#ARGV == 1){
+    $encfile = $ARGV[1];
+    open(my $fh, $encfile) or die("ack - $!");
+    my $states = <$fh>;
+    close $fh;
+    my $encoding  = File::ReadBackwards->new($encfile)->readline;
+    $states =~ s/st_//g;
+    @stNames =  split(',',$states);
+    
+    @encs =split(',',$encoding);
+    foreach $encstring (@encs){
+	print oct($encstring) . "\n";
+    }
+    print "--> @stNames\n";
+    print "--> @encs\n";
+    #create mapping
+
+    #expecting this format:
+
+}
 
 my $filename = $ARGV[0];
-
-open(my $fh, '<:encoding(UTF-8)', $filename)
+open($fh, '<:encoding(UTF-8)', $filename)
     or die "Could not open file '$filename' $!";
 
 my (@HoH); 
