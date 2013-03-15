@@ -1,6 +1,7 @@
 #/usr/bin/bash
 
 for file in $@; do
+
     base=$file;#"/data.exl" ;
     pythres=$file"_hd4.py"; 
     satres=$file"_hd4.out";
