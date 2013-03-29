@@ -5,33 +5,44 @@ use List::MoreUtils qw/ uniq /;
 use File::ReadBackwards;
 
 
-
 #print $#ARGV ;
 #if($#ARGV != 0 || $#ARGV !=1 ){
 #    print "usage: exl2oracle.pl fsm.kiss2 [encoding]\n";
 #    exit;
 #}
+
 my $encfile = "";
+my %enchash = {};
+
 if($#ARGV == 1){
     $encfile = $ARGV[1];
     open(my $fh, $encfile) or die("ack - $!");
     my $states = <$fh>;
     close $fh;
     my $encoding  = File::ReadBackwards->new($encfile)->readline;
+#    print $encoding;
     $states =~ s/st_//g;
+    $states =~ s/\s//g;
+    $encoding =~ s/\s//g;
     @stNames =  split(',',$states);
-    
-    @encs =split(',',$encoding);
-    foreach $encstring (@encs){
-	print oct($encstring) . "\n";
-    }
-    print "--> @stNames\n";
-    print "--> @encs\n";
-    #create mapping
+#    @stNames = map {qq|"$_"|} @stNames;
 
-    #expecting this format:
+    @encs =split(',',$encoding);
+
+
+#    foreach $encstring (@encs){
+#	print ($encstring) . "\n";
+#    }
+
+    #create mapping
+    @enchash {@stNames} = @encs;
+
 
 }
+
+#while ( my ($key, $value) = each(%enchash) ) {
+#    print "$key => ", oct($value), "\n";
+#}
 
 my $filename = $ARGV[0];
 open($fh, '<:encoding(UTF-8)', $filename)
@@ -72,12 +83,25 @@ while (my $line = <$fh>) {
 		if($needed == 1){ $switch_clause .= " && ";}
 		$switch_clause .= "\$ptext[$i] == $key ";
 		$needed = 1;
-	    }
-#	    
+	    }	    
 	}
-	if($needed == 0){ $switch_clause .= "1";};
-	$switch_clause .=  "){\$nextState = $dest; \$trans = $currSourceState.\".\".$dest;}\n";
+	if($needed == 0){ 
+	    $switch_clause .= "1";
 	}
+	
+	my $hwtemp = $enchash{$dest};
+	#determine the number of bits used
+	my $blength = length($hwtemp)-1;
+	$HW = substr(unpack("B32", pack("N", oct($enchash{$dest}) )), -1*$blength) =~ tr/1//;
+	$HD = substr(unpack("B32", pack("N", oct($enchash{$dest})^oct($enchash{$currSourceState}))), -1*$blength) =~ tr/1//;
+
+	#$HD = (unpack("%32b*", oct($HW))); # =~ tr/1//);
+
+#	my $HW = (unpack("b$blength", oct($enchash{$dest}) ) =~ tr/1//);
+#	my $HD = (unpack("b$blength", (oct($enchash{$currSourceState})^oct($enchash{$dest})) ) =~ tr/1//); 
+
+	$switch_clause .=  "){\$nextState = $dest; \$trans = $currSourceState.\".\".$dest; \$HW = $HW;\$HD = $HD;}\n";
+    }
 
 }
 
@@ -113,6 +137,8 @@ print "#every $ibits+1 are used as a single round input\n";
 print "my \@inputs = (\$data =~ \/";
 print "(\d)\s*" x ($ibits+1);
 print "\/g);\n";
+print "my \$HW;\n";
+print "my \$HD;\n";
 
 print "foreach \$temp (\<fh\>) {\n";
 print "chomp(\$temp);\n";
@@ -124,7 +150,9 @@ print "my \$trans = -1;\n";
 
 print $switch_clause;
 
-print "print \"\$trans\\n\";\n";
+print "print \"\$trans\\t\$HW\\t\$HD\\n\";\n";
+
+
 print "\t\$currState = \$nextState;\n";
 print "}#endwhile\n";
 print "close(FILE);\n";

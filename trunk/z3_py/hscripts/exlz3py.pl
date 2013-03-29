@@ -38,7 +38,7 @@ $count = scalar(@states);
 print "from z3 import *\n";
 print "from math import *\n";
 
-print "for bits in range(int(ceil(log($count)/log(2))+8),  int(ceil(log($count)/log(2))-1), -1):\n";
+print "for bits in range(int(ceil(log($count)/log(2))+5),  int(ceil(log($count)/log(2))-1), -1):\n";
 #print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
 #print "for bits in range($count-1, $count):\n";
 print "\t";
@@ -50,7 +50,7 @@ print(join(' ', @states),"\',bits)\n\n");
 #print "\tdefaultBV = BitVecVal(1, bits)\n";
 
 print "\ts = Solver();\n";
-print "\ts.set(\"timeout\", 300000)\n";
+print "\ts.set(\"timeout\", 600000)\n";
 
 print "\ts.add(Distinct(";
 
@@ -58,10 +58,10 @@ print(join(',',@states),"))\n\n");
 
 foreach $sdpair (@trans){
     ($source, $dest) = split(/:/, $sdpair);
-    #print addEqBitsRule($source, bits
-    print addEqHWRule($source , $dest, bits);
+ 
+#    print addEqHWRule($source , $dest, bits);
     if($source ne $dest){
-	print addEqBitsRule("($source ^ $dest)", 4 , bits);#$defaultxor, bits);
+	print addEqBitsRule("($source ^ $dest)", 2 , bits);#$defaultxor, bits);
     }
 
 }
