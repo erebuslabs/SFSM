@@ -1,7 +1,12 @@
 #!/usr/bin/perl
 use List::MoreUtils qw/ uniq /;
 
-my $filename = $ARGV[0];
+#my $filename = $ARGV[0];
+
+#should add check loops in this listing...
+my ($search_dist, $hw_on, $hd_on, $hw_val, $hd_val) = (4,1,1,0,0);
+
+($filename, $search_dist, $hw_on, $hd_on, $hw_val, $hd_val) = (shift, shift, shift, shift, shift, shift);
 
 open(my $fh, '<:encoding(UTF-8)', $filename)
     or die "Could not open file '$filename' $!";
@@ -38,7 +43,7 @@ $count = scalar(@states);
 print "from z3 import *\n";
 print "from math import *\n";
 
-print "for bits in range(int(ceil(log($count)/log(2))+5),  int(ceil(log($count)/log(2))-1), -1):\n";
+print "for bits in range(int(ceil(log($count)/log(2))+$search_dist),  int(ceil(log($count)/log(2))-1), -1):\n";
 #print "for bits in range($count, int(ceil(log($count)/log(2))), -1):\n";
 #print "for bits in range($count-1, $count):\n";
 print "\t";
@@ -50,7 +55,7 @@ print(join(' ', @states),"\',bits)\n\n");
 #print "\tdefaultBV = BitVecVal(1, bits)\n";
 
 print "\ts = Solver();\n";
-print "\ts.set(\"timeout\", 600000)\n";
+print "\ts.set(\"timeout\", 30000)\n";
 
 print "\ts.add(Distinct(";
 
@@ -59,9 +64,24 @@ print(join(',',@states),"))\n\n");
 foreach $sdpair (@trans){
     ($source, $dest) = split(/:/, $sdpair);
  
-#    print addEqHWRule($source , $dest, bits);
+    if($hw_on){
+	if($hw_val <= 0){
+	    print addEqHWRule($source , $dest, bits);
+	}
+	else{
+	    print addEqBitsRule("$source", $hw_val , bits);#$defaultxor, bits);
+	    print addEqBitsRule("$dest", $hw_val , bits);#$defaultxor, bits);
+	}
+    }
     if($source ne $dest){
-	print addEqBitsRule("($source ^ $dest)", 2 , bits);#$defaultxor, bits);
+	if($hd_on){
+	    if($hd_val <= 0){
+		print addEqHWRule("($source ^ $dest)", $defaultxor, bits);
+	    }
+	    else{
+		print addEqBitsRule("($source ^ $dest)", $hd_val , bits);
+	    }
+	}
     }
 
 }
@@ -78,6 +98,7 @@ print <<"EOT";
         else:
            print "NotSat, %d," %(bits),
            print " "
+           sys.exit()
         print " "
         sys.stdout.flush()
 EOT
