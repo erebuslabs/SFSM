@@ -4,9 +4,9 @@ use List::MoreUtils qw/ uniq /;
 #my $filename = $ARGV[0];
 
 #should add check loops in this listing...
-my ($search_dist, $hw_on, $hd_on, $hw_val, $hd_val) = (4,1,1,0,0);
+my ($search_dist, $hw_on, $hd_on, $hw_val, $hd_val, $timeout) = (4,1,1,0,0, 30000);
 
-($filename, $search_dist, $hw_on, $hd_on, $hw_val, $hd_val) = (shift, shift, shift, shift, shift, shift);
+($filename, $search_dist, $hw_on, $hd_on, $hw_val, $hd_val, $timeout) = (shift, shift, shift, shift, shift, shift, shift);
 
 open(my $fh, '<:encoding(UTF-8)', $filename)
     or die "Could not open file '$filename' $!";
@@ -14,6 +14,7 @@ open(my $fh, '<:encoding(UTF-8)', $filename)
 my (%HoH); 
 my @states, @trans;
 my $defaultxor;
+
 while (my $line = <$fh>) {
     chomp $line;
     if($line =~ m/(\S+)(\s+)(\S+)(\s+)(\S+)(\s+)(\S+)/g ){
@@ -55,7 +56,7 @@ print(join(' ', @states),"\',bits)\n\n");
 #print "\tdefaultBV = BitVecVal(1, bits)\n";
 
 print "\ts = Solver();\n";
-print "\ts.set(\"timeout\", 30000)\n";
+print "\ts.set(\"timeout\", $timeout)\n";
 
 print "\ts.add(Distinct(";
 
