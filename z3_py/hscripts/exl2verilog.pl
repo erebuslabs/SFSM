@@ -47,7 +47,7 @@ while (my $line = <$fh>) {
 		$switch_clause .= "\t  end\n";
 	    }
 	    $currSourceState = $newSourceState;
-	    $switch_clause .=  "\t  $newSourceState: begin\n";
+	    $switch_clause .=  "\t  st_$newSourceState: begin\n";
 	    $switch_clause .=  "\t\tif(";
 	}else{
 	    $switch_clause .= "\t\telse if(";
@@ -63,7 +63,7 @@ while (my $line = <$fh>) {
 #	    
 	}
 	if($needed == 0){ $switch_clause .= "1";};
-	$switch_clause .=  ")\n \t\t  NextState <= $dest;\n";
+	$switch_clause .=  ")\n \t\t  NextState <= st_$dest;\n";
     }
 }
 
@@ -87,8 +87,7 @@ print <<"EOT";
    //process modeling state register
    always @ (posedge RST or posedge CLK) begin
       if( RST == 1) begin
-	 State <= st1;
-	 //NextState <= WT;
+	 State <= st_st1;
       end
       else
 	State <= NextState;

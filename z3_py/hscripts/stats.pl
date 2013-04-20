@@ -1,13 +1,11 @@
 #!/usr/bin/perl -w
 
-
 use POSIX;
 use Statistics::Descriptive;
 use Graphics::GnuplotIF qw(GnuplotIF);
 use List::Util qw(sum);
+
 my $localstats = Statistics::Descriptive::Full->new();
-
-
 
 my ($datfile, $delay, $vectors, $clkperiod, $sampleRate, $oracle) = @ARGV; #($ARGV[0], $ARGV[1]);
 my $runcompStats = true;
@@ -126,6 +124,7 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
 
 	my $numerator = sum(map{($PMoment_dpvec[$_] * $PMoment_model[$_])/$#PMoment_dpvec} 0..$#PMoment_dpvec);
 	my $denomenator = ($dpvec_std_dev*$modStdDev[$model_idx]);
+
 #	print "\n ($numerator)  $dpvec_std_dev * $modStdDev[$model_idx])\n";
 
 	my $pearsons = ($numerator)/$denomenator;
@@ -141,8 +140,6 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
 my  $plot1 = Graphics::GnuplotIF->new(title => "line", style => "points", plot_titles =>["State", "tran", "HW", "HD"]);
 
 
-
-
 #$plot1->gnuplot_plot_y( \@mean );                
 #$plot1->gnuplot_pause( 5 );                     
 #$plot1->gnuplot_plot_y( \@variance );            
@@ -153,19 +150,4 @@ my  $plot1 = Graphics::GnuplotIF->new(title => "line", style => "points", plot_t
 $plot1->gnuplot_plot_y(@modelCorr);
 $plot1->gnuplot_pause( 10 );
     
-#foreach $model (@modelCorr){
-#    $plot1->gnuplot_plot_y(\@{$model});
-#    $plot1->gnuplot_pause( 5 );    
-#}
-#compute max mean, var, std_dev
 
-
-
-
-### Comparative Stats
-#if($runcompStat){
-#    print "\n====Running Comparative Statistics====\n";
-#
-#}else{
-#    print "\n====Skipping Comparative Statistics====\n";
-#}
