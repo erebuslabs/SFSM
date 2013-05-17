@@ -1,7 +1,7 @@
 #/usr/bin/bash
 
 for file in $@; do
-    base=$file"/data.exl" ;
+    base=$file;#"/data.exl" ;
     secfile=$file"_s.exl";
     gv=$file".gv";
     sgv=$file"_s.gv";
@@ -27,19 +27,19 @@ for file in $@; do
  
 
     echo "moving $secfile bmarks/secure/.";
-    mv $secfile bmarks/secure/.;
+#    mv $secfile bmarks/secure/.;
 
     echo "moving $dot results/viz/gv/.";
-    mv $gv results/viz/gv/.;
+#    mv $gv results/viz/gv/.;
 
     echo "moving $sdot results/viz/gv/.";
-    mv $sgv results/viz/gv/.;
+#    mv $sgv results/viz/gv/.;
 
     echo "moving $dot results/viz/gv/.";
-    mv $dot results/viz/png/.;
+#    mv $dot results/viz/png/.;
 
     echo "moving $sdot results/viz/gv/.";
-    mv $sdot results/viz/png/.;
+#    mv $sdot results/viz/png/.;
 
     echo "^=^=^==========$base=============^=^=^"
     echo " "
