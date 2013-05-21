@@ -7,14 +7,15 @@ use List::Util qw(sum);
 
 my $localstats = Statistics::Descriptive::Full->new();
 
-my ($datfile, $delay, $vectors, $clkperiod, $sampleRate, $oracle) = @ARGV; #($ARGV[0], $ARGV[1]);
-my $runcompStats = true;
+my ($datfile, $delay, $vectors, $clkperiod, $sampleRate, $oracle) = @ARGV; 
+
+my $runcompStats = 1;
 
 if($#ARGV < 4 || $#ARGV > 5){
-    print "USAGE: ./stats.pl datafile delay vec clk samplerate [oracle]\n";
+    print "USAGE: ./stats.pl datafile delay numvectors clkper samplerate [oracle]\n";
     exit(0);
-}elsif($#ARGV == 5){
-    $runcompStat = false;
+}elsif($#ARGV != 5){
+    $runcompStats = 0;
 }
 
 my $compTime = $vectors * $clkperiod;
@@ -27,7 +28,8 @@ my (@data, @row);
 my $idx = 0;
 my $VecCnt = 0;
 open(my $dfm, $datfile) or die("ack error - $!");
-#@time_val = <$dfm>;
+
+
 while(<$dfm>){
     if(m/^(\d+)\s+([-\d]+)\s*$/ && $idx > $delayEnd){
 	my $current = sprintf("%f",$2);
@@ -46,7 +48,8 @@ close $dfm;
 #### Handle the models
 my @Models;
 my @modelCorr;
-if($runcompStat){
+if($runcompStats==1){
+    print "\nRunning Stats based on Model File\n";
     my $ridx = 0;
     open(my $dfmodel, $oracle) or die("ack error - $!");
     while(<$dfmodel>){
@@ -57,14 +60,14 @@ if($runcompStat){
 	}
 	foreach $midx (0..$#mentry){
 	    push(@{@Models[$midx]}, $mentry[$midx]); 
-	}
-    
+	}    
 	$ridx++;
     }
     close $dfmodel;
 }
 else{
 ### TEMP FOR RAND VECTOR TESTING ONLY ###
+    print "\nRunning Stats based on Rand Data Models \n";
     my @rand = map { int(rand(4)+1 ) } (1..$VecCnt);
     push(@Models, [@rand]);
     @rand = map { int(rand(4)+1 ) } (1..$VecCnt);
@@ -77,7 +80,7 @@ foreach $model (@Models){
     my @tempdata = @{$model};
     $localstats->add_data(@tempdata);
     push(@modMeans, $localstats->mean());
-#    push(@variance, $localstats->variance());
+    push(@variance, $localstats->variance());
     push(@modStdDev, $localstats->standard_deviation());
     $localstats->clear();
     my @temp = ();
@@ -86,13 +89,13 @@ foreach $model (@Models){
 
 @mean, @variance, @std_dev;
 my @corrdp;
+
 foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
     my @dpvec;
     foreach $ridx (0..$VecCnt-1){
 	push @dpvec, $row[$ridx][$dpidx];
     }
     #compute local stats
-
     $localstats->add_data(@dpvec);
     
     $dpvec_mean = $localstats->mean();
@@ -127,8 +130,10 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
 
 #	print "\n ($numerator)  $dpvec_std_dev * $modStdDev[$model_idx])\n";
 
-	my $pearsons = ($numerator)/$denomenator;
-	
+	my $pearsons=0;
+	if($denomenator!=0){
+	     $pearsons = ($numerator)/$denomenator;
+	}
 	push(@{@modelCorr[$model_idx]}, $pearsons);
 
 	#print "For this model at dp# $dpidx: corr=($numerator)/($denomenator)=$pearsons\n";
@@ -139,15 +144,24 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
 
 my  $plot1 = Graphics::GnuplotIF->new(title => "line", style => "points", plot_titles =>["State", "tran", "HW", "HD"]);
 
+$plot1->gnuplot_cmd('set grid',
+		    'set key outside bottom',
+		    'set linestyle 1 lt 2 lw 3',
+		    'set key box linestyle 1'
 
-#$plot1->gnuplot_plot_y( \@mean );                
-#$plot1->gnuplot_pause( 5 );                     
-#$plot1->gnuplot_plot_y( \@variance );            
-#$plot1->gnuplot_pause( 5 );                     
-#$plot1->gnuplot_plot_y( \@std_dev );            
-#$plot1->gnuplot_pause( 5 );    
+);
+$plot1->gnuplot_plot_y( \@mean );                
+$plot1->gnuplot_pause(30 );
+
+
+$plot1->gnuplot_plot_y( \@variance );            
+$plot1->gnuplot_pause(30 );
+
+$plot1->gnuplot_plot_y( \@std_dev );            
+$plot1->gnuplot_pause(30 );
 
 $plot1->gnuplot_plot_y(@modelCorr);
-$plot1->gnuplot_pause( 10 );
+$plot1->gnuplot_pause(30 );
+
     
 
