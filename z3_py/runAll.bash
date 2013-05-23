@@ -1,4 +1,4 @@
-#!/bin/bash
+B1;2501;0c#!/bin/bash
 
 for file in $@; do
     base=${file:0:${#file}-6};
@@ -11,7 +11,7 @@ for file in $@; do
     
     optstring="_hw_"$hwon"_hd_"$hdon"_hwVal_"$hw_val"_hdVal_"$hd_val;
     
-#    $optstring= ${optstring//1/on};   
+#    $optstring=${optstring//1/on};   
 #    $optstring=${optstring//0/off};  
 #    $optstring.="_hwVal_$hw_val_hdVal_$hd_val";
 #    $optstring=${optstring/0/eq};
