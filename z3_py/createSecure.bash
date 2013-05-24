@@ -2,7 +2,6 @@
 
 
 for file in $@; do
-
     base=${file%%.*}; #"/data.exl" ;
     secfile=$base"_s.kiss2";
     
