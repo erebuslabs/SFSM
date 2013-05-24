@@ -18,9 +18,9 @@ if($#ARGV == 1){
     $encfile = $ARGV[1];
     open(my $fh, $encfile) or die("ack - $!");
     my $states = <$fh>;
-    close $fh;
+    close $f1h;
     my $encoding  = File::ReadBackwards->new($encfile)->readline;
-#    print $encoding;
+    #print $encoding;
     $states =~ s/st_//g;
     $states =~ s/\s//g;
     $encoding =~ s/\s//g;
