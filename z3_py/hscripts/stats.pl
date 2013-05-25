@@ -131,11 +131,9 @@ my (@mean, @variance, @std_dev, @corrdp);
 
 #Itterate over each datapoint 
 foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
-    #WHAT INFO IS NICE OVER EACH dp : mean, var, CORRELATION etc
-    my @dpvec;
+    #WHAT INFO IS NICE OVER EACH dp : mean, var, CORRELATION pvec, 
 
-    #collect the datapoint for each of the vectors
-    foreach $ridx (0..$VecCnt-1){
+    foreach $ridx(0..$VecCnt-1){
 	push @dpvec, $row[$ridx][$dpidx];
     }
 
@@ -184,7 +182,8 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
     delete @dpvec[0..$#dpvec];
 }
 
-my  $plot1 = Graphics::GnuplotIF->new(title => "line", style => "points") ;
+my $plot1 = Graphics::GnuplotIF->new(title => "line", style => "points") ;
+
 $plot1->gnuplot_cmd('set grid',
 		    'set key outside bottom',
 		    'set linestyle 1 lt 2 lw 3',
