@@ -34,6 +34,7 @@ my(@maxcurr);
 while(<$dfm>){
     if(m/^(\d+)\s+([-\d]+)\s*$/ && $idx > $delayEnd){
 	my $current = sprintf("%f",$2);
+	if ($current < 0){ $current = 0;}
 	my $absIdx = ($idx - $delayEnd) % ($sampleRate*$clkperiod);
 	push(@data, $current);
 	if($absIdx == 0){
@@ -42,7 +43,7 @@ while(<$dfm>){
 	    #e.g. MAX curr 
 	    $localstats->add_data(@data);
 	    push @maxcurr, $localstats->max(); 
-	    push @meancurr, $localstats->mean(); 
+	    #push @meancurr, $localstats->mean(); 
 	    push @row, [@data];    
 	    delete @data[0..$#data];
 	    $localstats->clear();
@@ -64,7 +65,7 @@ $localstats->clear();
 #print "\nmax of means,",$localstats->max();  
 #print "\nmean of means,",$localstats->mean(); 
 #print "\nvar of  means,",$localstats->variance(); 
-$localstats->clear();
+#$localstats->clear();
 
 #### Handle the models
 my @Models;
@@ -111,32 +112,52 @@ foreach $model (@Models){
     push(@modelCorr, [@temp]);
 }
 
-my  $plotvector = Graphics::GnuplotIF->new(title => "Checkit", style => "boxes");
+my $plotvector = Graphics::GnuplotIF->new(title => "Original Current Source",
+					  ylabel=> 'Rounds',
+					  xlabel=> 'Current ',
+					  style => "pm3d",
+					  perrsist   => 1,
+					  plot_also  => 1,
+					  scriptfile => '3dplot.cmds',
+);
 
-$plotvector->gnuplot_cmd('set grid',
-			 'set key outside bottom',
-			 'set linestyle 1 lt 2 lw 3',
-			 'set key box linestyle 1'
+$plotvector->gnuplot_cmd(
+    'set pm3d',
+#			 'set palette rgbformulae 34,35,36',
+#			 'set palette rgbformulae 30,31,32',
+    'set palette gray',
+    'set ticslevel 0',
+    'set dgrid3d 100,50',
+    'set grid 1000,50',
+    'set isosample 100,100',
+#			 'set key center bottom',
+    'unset key', 
+#			 'set linestyle 1 lt 2 lw 3',
+#			 'set key box linestyle 1'
     );
 
+$plotvector->gnuplot_hardcopy( '3dplot.ps',
+                            'postscript color',
+                            'lw 2' );
+#$plotvector->gnuplot_cmd( 'set terminal png ',#
+#			  'set output "3dplot.png" ' );
 
-$plotvector->gnuplot_set_plot_titles("Model Mean", "Model Var", "Model StdDev");
-#$plotvector->gnuplot_plot_y(\@modMeans, \@modVariance, \@modStdDev);
-$plotvector->gnuplot_plot_y(\@maxvar);
-$plotvector->gnuplot_pause(60 );
+$plotvector->gnuplot_set_plot_titles("Current Trace Per Round");
+$plotvector->gnuplot_plot_3d(\@row);
+#$plotvector->gnuplot_pause(10);
 
 
 
 my (@mean, @variance, @std_dev, @corrdp);
-
+my @allDPVecs;
+my $model_idx = 0;
 #Itterate over each datapoint 
-foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
+foreach $dpidx (0..($sampleRate*$clkperiod)-1){ 
     #WHAT INFO IS NICE OVER EACH dp : mean, var, CORRELATION pvec, 
-
+    #create a datapoint vector 
     foreach $ridx(0..$VecCnt-1){
 	push @dpvec, $row[$ridx][$dpidx];
     }
-
     #compute local stats
     $localstats->add_data(@dpvec);
     #need mean and std later
@@ -151,8 +172,9 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
     
     #compute the moment of the datapoint vector
     my @PMoment_dpvec = map {$_ - $dpvec_mean } @dpvec;
-    my $model_idx = 0;
-  
+    
+    $model_idx = 0;
+    #compute the correlation for against each model
     foreach $model (@Models){
 	#computer the moment of the model
 	@PMoment_model = map{ $_ - $modMeans[$model_idx]}@{$model};;
@@ -179,20 +201,83 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1) {
 	#print "For this model at dp# $dpidx: corr=($numerator)/($denomenator)=$pearsons\n";
 	$model_idx++;
     }    
+    push (@allDPVecs, [@dpvec]);
     delete @dpvec[0..$#dpvec];
 }
 
-my $plot1 = Graphics::GnuplotIF->new(title => "line", style => "points") ;
+my @modelName = ("ACTUAL-STATE", "ACTUAL-TRANSITION", "HW-MODEL", "HD-MODEL");
 
-$plot1->gnuplot_cmd('set grid',
-		    'set key outside bottom',
-		    'set linestyle 1 lt 2 lw 3',
-		    'set key box linestyle 1'
-    );
+#compute the maximum correlation between models and datapoint
 
+my $modelidx = 0;
+
+foreach $model (@Models){
+    $localstats->clear();
+    $localstats->add_data(@{$model});    
+    my $MODELMIN = ($localstats->min())-5;
+    my $MODELMAX = ($localstats->max())+5;
+    $localstats->clear(); 
+    $localstats->add_data(@{$modelCorr[$modelidx]});    
+    print "\nModel Correlation,".$modelName[$modelidx];
+    my $maxidx = $localstats->maxdex();
+    print "\nMin,",$localstats->min(),",",$localstats->mindex();
+    print "\nMax,",$localstats->max(),",",$maxidx;
+    my $title=  "Max Correlation (".$localstats->max().") of ".$modelName[$modelidx]." and Datapoints at t=".$maxidx; 
+
+    my $plot1 = Graphics::GnuplotIF->new(title => $title,
+					 style => "points", ylabel=> 'Curr',
+					 y2label=> 'Model',
+					 xlabel=> 'Rounds ',
+					 perrsist    => 1,
+					 plot_also   => 1,
+					 scriptfile  => "${modelidx}_plot.cmds"
+	) ;
+
+
+    $localstats->clear();
+    $plot1->gnuplot_cmd('set y2label "Model"',
+			"set y2range [$MODELMIN:$MODELMAX]",
+			'set y2tics border',
+			#"set y1range [:]",
+			'set grid',
+			'set key outside bottom',
+			#'set linestyle 1 lt 2 lw 3',
+			#'set key box linestyle 1',
+		    
+   );
+
+
+    
+    #print out model and the data vector it correlated too
+    my @activedpvector = @{$allDPVecs[$maxidx]};
+    my @x = [0 .. $#activedpvector-1];
+    
+    my %activedp = ('x_values'=> @x, 'y_values'=>\@activedpvector, 'style_spec' => "lines axes x1y1"); 
+    my %model1 = ('x_values'=>@x, 'y_values'=>\@{$model}, 'style_spec' => "lines axes x1y2");
+    
+    my %related = ('x_values'=>\@{$model}, 'y_values'=>\@activedpvector, 'style_spec'=>"dots axes x1y1");
+    my $fname = $modelName[$modelidx].".ps";
+
+#    $plot1->gnuplot_cmd( 'set terminal png ',
+#			      "set output \"$fname\" " );
+
+    $plot1->gnuplot_hardcopy( $fname,
+                            'postscript color',
+                            'lw 2' );
+
+
+    $plot1->gnuplot_set_plot_titles("Datapoints", "Model");
+    $plot1->gnuplot_plot_xy_style(@x, \%activedp, \%model1);
+
+    $modelidx++;
+}
+  
 #$plot1->gnuplot_set_plot_titles("Mean");
 #$plot1->gnuplot_plot_y( \@mean );                
 #$plot1->gnuplot_pause(10 );
+
+
+
 
 #$plot1->gnuplot_set_plot_titles("Variance");
 #$plot1->gnuplot_plot_y( \@row );            
