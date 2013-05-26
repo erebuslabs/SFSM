@@ -4,6 +4,7 @@ use POSIX;
 use Statistics::Descriptive;
 use Graphics::GnuplotIF qw(GnuplotIF);
 use List::Util qw(sum);
+use List::MoreUtils qw(uniq);
 
 my $localstats = Statistics::Descriptive::Full->new();
 
@@ -128,7 +129,7 @@ $plotvector->gnuplot_cmd(
     'set palette gray',
     'set ticslevel 0',
     'set dgrid3d 100,50',
-    'set grid 1000,50',
+  #  'set grid 500,50',
     'set isosample 100,100',
 #			 'set key center bottom',
     'unset key', 
@@ -176,7 +177,7 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
     $model_idx = 0;
     #compute the correlation for against each model
     foreach $model (@Models){
-	#computer the moment of the model
+	#compute the moment of the model
 	@PMoment_model = map{ $_ - $modMeans[$model_idx]}@{$model};;
 	
 #	print "@{$model} <--model\n";
@@ -216,13 +217,26 @@ foreach $model (@Models){
     $localstats->add_data(@{$model});    
     my $MODELMIN = ($localstats->min())-5;
     my $MODELMAX = ($localstats->max())+5;
+    my $MODELUNI = scalar(uniq(@{$model})); 
+    
+
+
     $localstats->clear(); 
     $localstats->add_data(@{$modelCorr[$modelidx]});    
     print "\nModel Correlation,".$modelName[$modelidx];
-    my $maxidx = $localstats->maxdex();
-    print "\nMin,",$localstats->min(),",",$localstats->mindex();
-    print "\nMax,",$localstats->max(),",",$maxidx;
-    my $title=  "Max Correlation (".$localstats->max().") of ".$modelName[$modelidx]." and Datapoints at t=".$maxidx; 
+    my $maxcorridx = $localstats->maxdex();
+    my $mincorridx = $localstats->mindex();
+    my $corrMin =$localstats->min();
+    my $corrMax = $localstats->max();
+
+    print "\nMin,",$corrMin,",",$mincorridx;
+    print "\nMax,",$corrMax,",",$maxcorridx;
+
+
+    my $title =  "Max Correlation ("
+	.$corrMax.") of "
+	.$modelName[$modelidx]
+	." and Datapoints at t=".$maxcorridx; 
 
     my $plot1 = Graphics::GnuplotIF->new(title => $title,
 					 style => "points", ylabel=> 'Curr',
@@ -234,7 +248,17 @@ foreach $model (@Models){
 	) ;
 
 
+    my @activedpvector = @{$allDPVecs[$maxcorridx]};
     $localstats->clear();
+    $localstats->add_data(@activedpvector);
+    my $DPMAX = $localstats->max();
+    my $DPMIN = $localstats->min();
+  
+
+
+    my @steppedarray = map{ceil(($_-$DPMIN)/(($DPMAX-$DPMIN)/$MODELUNI)/1)} @activedpvector;
+
+
     $plot1->gnuplot_cmd('set y2label "Model"',
 			"set y2range [$MODELMIN:$MODELMAX]",
 			'set y2tics border',
@@ -243,31 +267,66 @@ foreach $model (@Models){
 			'set key outside bottom',
 			#'set linestyle 1 lt 2 lw 3',
 			#'set key box linestyle 1',
-		    
-   );
-
+	);
 
     
     #print out model and the data vector it correlated too
-    my @activedpvector = @{$allDPVecs[$maxidx]};
+    
     my @x = [0 .. $#activedpvector-1];
-    
-    my %activedp = ('x_values'=> @x, 'y_values'=>\@activedpvector, 'style_spec' => "lines axes x1y1"); 
-    my %model1 = ('x_values'=>@x, 'y_values'=>\@{$model}, 'style_spec' => "lines axes x1y2");
-    
-    my %related = ('x_values'=>\@{$model}, 'y_values'=>\@activedpvector, 'style_spec'=>"dots axes x1y1");
-    my $fname = $modelName[$modelidx].".ps";
 
-#    $plot1->gnuplot_cmd( 'set terminal png ',
-#			      "set output \"$fname\" " );
+
+    my %activedp = ('x_values'=> @x, 
+		    'y_values'=>\@activedpvector, 
+		    'style_spec' => "lines axes x1y1"); 
+    my %model1 = ('x_values'=>@x,
+		  'y_values'=>\@{$model},
+		  'style_spec' => "lines axes x1y2");
+    
+    my %binned =  ('x_values'=>@x,
+		  'y_values'=>\@steppedarray,
+		  'style_spec' => "lines axes x1y2");
+    
+    my %related = ('x_values'=>\@{$model},
+		   'y_values'=>\@activedpvector,
+		   'style_spec'=>"dots axes x1y1");
+    
+    my $fname = $modelName[$modelidx].".ps";
 
     $plot1->gnuplot_hardcopy( $fname,
                             'postscript color',
                             'lw 2' );
 
+    $plot1->gnuplot_set_plot_titles("Datapoints", "Model", "Binned");
+    $plot1->gnuplot_plot_xy_style(@x, \%activedp, \%model1, \%binned);
 
-    $plot1->gnuplot_set_plot_titles("Datapoints", "Model");
-    $plot1->gnuplot_plot_xy_style(@x, \%activedp, \%model1);
+
+
+    ##Let's check relation when the data is binned wrt to # of elements in the model 
+
+    #number of unique elements in model?
+  
+    #%freq = $localstats->frequency_distribution($MODELUNI);
+    #print $localstats->frequency_distribution();
+    print "\n";
+
+#    for (sort {$a <=> $b} keys %freq) {
+#	print "key = $_, count = $freq{$_}\n";
+#    }
+    
+        
+
+#print @steppedarray;	
+    
+    
+
+    $localstats->clear();
+    #$localstats->add_data(@{$model});    
+	
+
+
+
+
+
 
     $modelidx++;
 }
