@@ -6,7 +6,8 @@ use POSIX;
 use Statistics::Descriptive;
 use Graphics::GnuplotIF qw(GnuplotIF);
 use List::Util qw(sum);
-use List::MoreUtils qw(uniq);
+
+use List::MoreUtils qw(uniq minmax);
 #use Math::GSL::Statistics qw /:all/;
 #use PDL::Stats::Basic;
 
@@ -29,57 +30,60 @@ my $compTime = $vectors * $clkperiod;
 my $totalTime = $compTime + $delay;
 my $dpPUT = $sampleRate; #dpPUT: datapoint per Unit Time
 my $delayEnd = $sampleRate * $delay;
-my (@data, @row);
+my (@data, @row, @qrow);
 
-### READ DAT FILE and Construct
+### READ DAT FILE and Construct###
 my $idx = 0;
 my $VecCnt = 0;
+my $tmpvectCnt = 0;
 open(my $dfm, $datfile) or die("ack error - $!");
-
-my(@maxcurr, @varcurr);
-
+my(@maxcurr, @meancurr);
+my $slopmean = 1;
 while(<$dfm>){
     if(m/^(\d+)\s+([-\d]+)\s*$/ && $idx > $delayEnd){
 	my $current = sprintf("%f",$2);
-	if ($current < 0){ $current = 0;}
+	if ($current < 0){ $current = $slopmean;}
 	my $absIdx = ($idx - $delayEnd) % ($sampleRate*$clkperiod);
 	push(@data, $current);
+	
 	if($absIdx == 0){
-	    $VecCnt++;
-            #At this point,compute items concerning this single vec
-	    #e.g. MAX curr 
-	    $localstats->add_data(@data);
-	    push @maxcurr, $localstats->max(); 
-	    push @varcurr, $localstats->standard_deviation();
-	    #push @meancurr, $localstats->mean(); 
-	    push @row, [@data];    
+	    $tmpvectCnt++;
+	    if($tmpvectCnt >= 10 && $tmpvectCnt+10 <= $vectors){
+		$VecCnt++;
+		
+#At this point,compute items concerning this single vec
+		#e.g. MAX curr 
+		my @qa = quantize(16, @data);
+		$localstats->add_data(@data);
+		
+		push @maxcurr, $localstats->max(); #maxcurr holds maxcurr per round 
+		$slopmean = $localstats->mean();
+		push @meancurr, $slopmean; #meancurr per round
+		push @row, [@data];    
+		push @qrow, [@qa];
+		$localstats->clear();	    		
+
+	    }
 	    delete @data[0..$#data];
-	    $localstats->clear();
+
 	}
     }
     $idx++;
 }
 close $dfm;
 
+
+### END READ DAT FILE and Construct###
+################################################################################
 #Compute Agregate Stats for all entries
 print "\nStatisticts n=",($VecCnt-1);
 $localstats->add_data(@maxcurr);
-print "\nmax curr,",$localstats->max(),",@",$localstats->maxdex();  
+print "\nmax curr,",$localstats->max();
 print "\nmean max curr,",$localstats->mean(); 
-print "\nvar max curr,",$localstats->variance(); 
 $localstats->clear();
-
-$localstats->add_data(@varcurr);
-print "\nmax variation,",$localstats->max(),",@",$localstats->maxdex();    
-print "\nmean variation,",$localstats->mean(); 
-print "\nvar variation,",$localstats->variance(); 
-
+$localstats->add_data(@meancurr);
+print "\nmean curr,",$localstats->mean(); 
 $localstats->clear();
-#$localstats->add_data(@meancurr);
-#print "\nmax of means,",$localstats->max();  
-#print "\nmean of means,",$localstats->mean(); 
-#print "\nvar of  means,",$localstats->variance(); 
-#$localstats->clear();
 
 #### Handle the models
 my @Models;
@@ -92,15 +96,22 @@ if($runcompStats==1){
 
     while(<$dfmodel>){
 	@mentry = split(/\s+/);
-	if($rndidx == 0){
+	$rndidx++;	
+	if($rndidx == 1){
 	    my @tmp;
 	    @Models = map{ [@tmp]} 0..$#mentry;
 	}
-	foreach $midx (0..$#mentry){
-	    push(@{$Models[$midx]}, $mentry[$midx]); 
-	}    
-	$rndidx++;
+	if($rndidx >= 10 && ($rndidx+10) <= $vectors){
+	    foreach $midx (0..$#mentry){
+		push(@{$Models[$midx]}, $mentry[$midx]); 
+		
+	    }    
+
+	}
+	
+	
     }
+    print "Rounds in model used: ",$rndidx;
     close $dfmodel;
 }
 else{
@@ -130,11 +141,12 @@ foreach $model (@Models){
 }
 
 
-print3D(@row);
+print3D(@qrow);
 
-my (@mean, @variance, @std_dev, @corrdp);
-my @allDPVecs;
+my (@mean, @variance, @std_dev, @corrdp, @kurtosis);
+my (@allDPVecs, @allQAVecs);
 my $model_idx = 0;
+
 #Itterate over each datapoint 
 foreach $dpidx (0..($sampleRate*$clkperiod)-1){ 
     #WHAT INFO IS NICE OVER EACH dp : mean, var, CORRELATION pvec, 
@@ -151,64 +163,108 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
     push(@mean, $dpvec_mean);
     push(@variance, $localstats->variance());
     push(@std_dev, $dpvec_std_dev);
+    push(@kurtosis, $localstats->kurtosis()); 
     
     $localstats->clear();
     
-    #compute the moment of the datapoint vector
-    #my @PMoment_dpvec = map {$_ - $dpvec_mean } @dpvec;
-    
     $model_idx = 0;
     #compute the correlation for against each model
+    my @qavec = quantize(16, @dpvec);
     foreach $model (@Models){
-	#compute the moment of the model
-#	@PMoment_model = map{ $_ - $modMeans[$model_idx]}@{$model};;
-	
-#	print "@{$model} <--model\n";
-#	print "@PMoment_model <--Moment model \n";
-
-	## Compute correlation between Model,dpvec ##	
-	##    ( PMoment_dpvec x PMoment_model )    ## 
-	##    ---------------------------------    ##
-	##      std_dev_dpvec x std_dev_model      ##
-
-#	my $numerator = sum(map{($PMoment_dpvec[$_] * $PMoment_model[$_])/$#PMoment_dpvec} 0..$#PMoment_dpvec);
-#	my $denomenator = ($dpvec_std_dev*$modStdDev[$model_idx]);
-
-#	print "\n ($numerator)  $dpvec_std_dev * $modStdDev[$model_idx])\n";
-
-	#my $pearsons=0;
-	#if($denomenator!=0){
-	#     $pearsons = ($numerator)/$denomenator;
-	#}
-
-#	print  "V#######\nArrayMODEL\n#####V";
-#	print @$model;
-#	print  "V#######\nArrayDPVEC\n#####V";
-#	print @dpvec ;
 	my $pearsons = 0;
-	if(stddev(\@$model) != 0 && stddev(\@dpvec)!= 0)
-	{	
-	    $pearsons = correlation(\@$model,\@dpvec);
+#	print "\nLength of Model ", scalar(@$model);
+	if(stddev(\@$model) != 0 && stddev(\@qavec)!= 0){	
+	    $pearsons = correlation(\@$model,\@qavec);
 	}
-
-#gsl_stats_mean($model,1,$#model+1);#
-
-#	print "\nOld ".$pearsons;#." New ".$npearsons; 
-	push(@{$modelCorr[$model_idx]}, abs($pearsons));
-
-#	print "For this model at dp# $dpidx: corr=($numerator)/($denomenator)=$pearsons\n";
+#	if(stddev(\@$model) != 0 && stddev(\@dpvec)!= 0){	
+#	    $pearsons = correlation(\@$model,\@dpvec);
+#	}
+	push(@{$modelCorr[$model_idx]}, $pearsons);
 	$model_idx++;
-    }    
+    }
+    
     push (@allDPVecs, [@dpvec]);
     delete @dpvec[0..$#dpvec];
+    push (@allQAVecs, [@qavec]);
+    delete @qavec[0..$#qavec];
 }
 
+
+##What points are we interested in?
+#Highest Correlation?
+#Where highest variation occurs?
+#
+
+$localstats->clear();
+$localstats->add_data(@variance);
+print "\nMax variance,",$localstats->max(),", @",$localstats->maxdex();
+$localstats->clear();
+$localstats->add_data(@kurtosis);
+print "\nMax kurtosis,",$localstats->max(),", @",$localstats->maxdex();
+print "\nMin kurtosis,",$localstats->min(),", @",$localstats->mindex();
+
+#Print / plot the correlation vectors for each model as well as the current variation
+
+
+my $plotCorrVecs = Graphics::GnuplotIF->new(
+    title => "Correlation Vectors with Current Variation",
+    style => "points", ylabel=> 'i variance',
+    y2label=> 'Correlation',
+    xlabel=> 'Datapoints ',
+    perrsist    => 1,
+    plot_also   => 1,
+    scriptfile  => "corrvec_curr_var_plot.cmds"
+    ) ;
+
+$plotCorrVecs->gnuplot_cmd('set y2label "Model"',
+		    "set y2range [-1:1]",
+		    'set y2tics border',
+		    #"set y1range [:]",
+		    'set grid',
+		    'set key outside bottom',
+		    #'set linestyle 1 lt 2 lw 3',
+			#'set key box linestyle 1',
+    );
+
+    #Create a generic X-axis
+    my @x = [0 .. $VecCnt];
+
+    #create hashes
+    my %dpvariance = ('x_values'=> @x, 
+		    'y_values'=>\@{$allQAVecs[618]}, 
+		    'style_spec' => "lines axes x1y1"); 
+
+    my %model1 = ('x_values'=>@x,
+		  'y_values'=>\@{$Models[0]},
+		  'style_spec' => "lines axes x1y2");
+
+    my %model2 = ('x_values'=>@x,
+		  'y_values'=>\@{$Models[1]},
+		  'style_spec' => "lines axes x1y2");
+
+    my %model3 = ('x_values'=>@x,
+		  'y_values'=>\@{$Models[2]},
+		  'style_spec' => "lines axes x1y2");
+    my %model4 = ('x_values'=>@x,
+		  'y_values'=>\@{$Models[3]},
+		  'style_spec' => "lines axes x1y2");
+    
+    #Normalized DP vector
+my $fname = "varainceAndModelCorr.ps";
+
+$plotCorrVecs->gnuplot_hardcopy( $fname,
+			  'postscript color',
+			  'lw 2' );
+
+$plotCorrVecs->gnuplot_set_plot_titles("Variance", "ActualState", "ActualTran", "HW","HD");
+$plotCorrVecs->gnuplot_plot_xy_style(@x, \%dpvariance, \%model1, \%model2, \%model3, \%model4);
+
+
+
 my @modelName = ("ACTUAL-STATE", "ACTUAL-TRANSITION", "HW-MODEL", "HD-MODEL");
-
-#compute the maximum correlation between models and datapoint
-
+#plot the point which has the maximum correlation between models and datapoint
+#TODO: Use the Maximum current variation location instead?
 my $modelidx = 0;
-
 foreach $model (@Models){
     $localstats->clear();
     $localstats->add_data(@{$model});    
@@ -216,8 +272,6 @@ foreach $model (@Models){
     my $MODELMAX = ($localstats->max())+5;
     my $MODELUNI = scalar(uniq(@{$model})); 
     
-
-
     $localstats->clear(); 
     $localstats->add_data(@{$modelCorr[$modelidx]});    
     print "\nModel Correlation,".$modelName[$modelidx];
@@ -250,7 +304,9 @@ foreach $model (@Models){
     $localstats->clear();
     $maxcorridx = 591;
 
+
     my @activedpvector = @{$allDPVecs[$maxcorridx]};
+
     $localstats->add_data(@activedpvector);
     my $DPMAX = $localstats->max();
     my $DPMIN = $localstats->min();
@@ -374,4 +430,17 @@ $plotvector->gnuplot_hardcopy(
     
 
 
+
+sub quantize{
+    my($bits, @y) = (shift, @_);
+    my $eps = 0;
+    my ($min,$max) = minmax(@y);
+#    print $min, "-",$max,"\n";
+    if($min!=$max){
+	return map {floor($bits * log(($_+$eps)/($min+$eps))/(log(($max+$eps)/($min+$eps))))} @y;
+    }
+    else{
+	return @y;
+    }
+}
 
