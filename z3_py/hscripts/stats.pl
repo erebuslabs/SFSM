@@ -12,6 +12,11 @@ use List::MoreUtils qw(uniq minmax);
 #use PDL::Stats::Basic;
 
 use Statistics::Basic qw(:all nofill);
+sub jpdf (\@\@);
+sub jprob($$\@\@);
+sub MI(\@\@);
+#############
+
 
 my $localstats = Statistics::Descriptive::Full->new();
 
@@ -141,7 +146,7 @@ foreach $model (@Models){
 }
 
 
-print3D(@qrow);
+#print3D(@row);
 
 my (@mean, @variance, @std_dev, @corrdp, @kurtosis);
 my (@allDPVecs, @allQAVecs);
@@ -153,7 +158,7 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
     #create a datapoint vector 
     foreach $ridx(0..$VecCnt-1){
 	push @dpvec, $row[$ridx][$dpidx];
-    }
+   }
     #compute local stats
     $localstats->add_data(@dpvec);
     #need mean and std later
@@ -169,7 +174,7 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
     
     $model_idx = 0;
     #compute the correlation for against each model
-    my @qavec = quantize(16, @dpvec);
+    my @qavec = quantize(7, @dpvec);
     foreach $model (@Models){
 	my $pearsons = 0;
 #	print "\nLength of Model ", scalar(@$model);
@@ -261,6 +266,9 @@ $plotCorrVecs->gnuplot_plot_xy_style(@x, \%dpvariance, \%model1, \%model2, \%mod
 
 
 
+############CLICKER PLOT
+
+
 my @modelName = ("ACTUAL-STATE", "ACTUAL-TRANSITION", "HW-MODEL", "HD-MODEL");
 #plot the point which has the maximum correlation between models and datapoint
 #TODO: Use the Maximum current variation location instead?
@@ -283,6 +291,12 @@ foreach $model (@Models){
     print "\nMin,",$corrMin,",",$mincorridx;
     print "\nMax,",$corrMax,",",$maxcorridx;
 
+    %mypdf = pdf(@{$model});
+    print "\nModel PDF::\n";
+    foreach $key (sort keys %mypdf){
+	print "$key: $mypdf{$key}\n";
+
+    }    
 
     my $title =  "Max Correlation ("
 	.$corrMax.") of "
@@ -302,26 +316,35 @@ foreach $model (@Models){
 
 
     $localstats->clear();
-    $maxcorridx = 591;
+###    $maxcorridx = 591;
 
 
     my @activedpvector = @{$allDPVecs[$maxcorridx]};
-
+    my @steppedarray = @{$allQAVecs[$maxcorridx]};
     $localstats->add_data(@activedpvector);
     my $DPMAX = $localstats->max();
     my $DPMIN = $localstats->min();
   
 
-    my @steppedarray = 
-	map{ceil(($_-$DPMIN)/(($DPMAX-$DPMIN)/$MODELUNI)/1)} @activedpvector;
+#    my @steppedarray = #
+#	map{ceil(($_-$DPMIN)/(($DPMAX-$DPMIN)/$MODELUNI)/1)} @activedpvector;
 
     #Compute the correlation between binned array and model
 
-    %mypdf = pdf(@activedpvector);
+    %mypdf = pdf(@steppedarray);
     print "\nPDF::\n";
     foreach $key (sort keys %mypdf){
 	print "$key: $mypdf{$key}\n";
 
+    }
+
+    %myjpdf = jpdf(@steppedarray, @$model);
+    my $mymi = MI(@steppedarray, @$model);
+    print "\nMI= $mymi \tJPDF::\n";
+    foreach $key1 (sort keys %myjpdf){
+	for $key2 (sort keys %{$myjpdf{$key1}}){
+	    print "$key1, $key2, $myjpdf{$key1}{$key2}\n";
+	}
     }
 
     $plot1->gnuplot_cmd('set y2label "Model"',
@@ -338,7 +361,7 @@ foreach $model (@Models){
     #print out model and the data vector it correlated too
 
     #Create a generic X-axis
-    my @x = [0 .. $#activedpvector-1];
+    my @x = [0 .. $#activedpvector];
 
     #create hashes
     my %activedp = ('x_values'=> @x, 
@@ -365,9 +388,12 @@ foreach $model (@Models){
                             'lw 2' );
 
     $plot1->gnuplot_set_plot_titles("Datapoints", "Model", "Binned");
-    $plot1->gnuplot_plot_xy_style(@x, \%activedp, \%model1, \%binned);
+
+#    $plot1->gnuplot_plot_xy_style(@x, \%activedp, \%model1, \%binned);
+    $plot1->gnuplot_plot_xy(\@{$model}, \@activedpvector);
 
 
+    
 
     ##Let's check relation when the data is binned wrt to # of elements in the model 
 
@@ -438,6 +464,7 @@ $plotvector->gnuplot_hardcopy(
 
 
 sub quantize{
+
     my($bits, @y) = (shift, @_);
     my $eps = 0;
     my ($min,$max) = minmax(@y);
@@ -454,7 +481,7 @@ sub quantize{
 
 sub prob{
    # return probability of val occurance
-    my($val, @datv) (shift, @_);
+    my($val, @datv) = (shift, @_);
     my $length = scalar @datv; 
     return sum(map { $_==$val } @datv)/$length;
 
@@ -465,4 +492,48 @@ sub pdf{
     my(@datv) = @_; 
     return map{ $_ => prob($_, @datv) } uniq(@datv);
 	
+}
+
+sub jprob ($$\@\@){
+    my($x,$y,$xarref,$yarref) = @_;
+    my @xarr = @$xarref;
+    my @yarr = @$yarref;
+
+    #create a 0/1 array based on wheter $yarref contains y
+    my @yvalid = map{ $_== $y } @yarr;
+    my $ycount = sum(@yvalid);
+    my $temp = sum( map{$yvalid[$_]*($xarr[$_]==$x) } (0..$#yarr));
+    return $temp/$ycount;
+}	
+	
+
+sub jpdf (\@\@){
+    my($xref,$yref) = @_;
+    my @xa = @{$xref};
+    my @ya = @{$yref};
+    my %jpdf;
+
+    foreach $xel (uniq(@xa)){
+	foreach $yel (uniq(@ya)){
+	    $jpdf{$xel}{$yel} = jprob($xel, $yel, @xa, @ya);     
+	}
+    }
+    return %jpdf;
+}
+
+sub MI(\@\@){
+    my($xref,$yref) = @_;
+    my @xa = @{$xref};
+    my @ya = @{$yref};
+    my $count = 0;
+    foreach $xel (sort(uniq(@xa))){
+	foreach $yel (sort(uniq(@ya))){
+	    my $xy = jprob($xel, $yel, @xa, @ya);
+	    my $inner = $xy/(prob($xel,@xa)*prob($yel,@ya));
+	    if($inner != 0){
+	       $count+= $xy*log($inner);
+	    }
+	}
+    }
+    return $count;
 }
