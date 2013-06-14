@@ -463,6 +463,6 @@ sub prob{
 sub pdf{
     #return pdf hash
     my(@datv) = @_; 
-    return = map{ $_ => prob($_,@datv)} uniq(@datv);
+    return map{ $_ => prob($_, @datv) } uniq(@datv);
 	
 }
