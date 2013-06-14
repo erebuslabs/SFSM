@@ -15,6 +15,7 @@ use Statistics::Basic qw(:all nofill);
 sub jpdf (\@\@);
 sub jprob($$\@\@);
 sub MI(\@\@);
+sub hh2aa(\%);
 #############
 
 
@@ -58,7 +59,7 @@ while(<$dfm>){
 		
 #At this point,compute items concerning this single vec
 		#e.g. MAX curr 
-		my @qa = quantize(16, @data);
+		my @qa = quantize(15, @data);
 		$localstats->add_data(@data);
 		
 		push @maxcurr, $localstats->max(); #maxcurr holds maxcurr per round 
@@ -174,13 +175,16 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
     
     $model_idx = 0;
     #compute the correlation for against each model
-    my @qavec = quantize(7, @dpvec);
+    my @qavec = quantize(15, @dpvec);
     foreach $model (@Models){
 	my $pearsons = 0;
 #	print "\nLength of Model ", scalar(@$model);
+	#Working with Quantized vector instead of "real one"
+	#are we quantizing correctly??? HERE
 	if(stddev(\@$model) != 0 && stddev(\@qavec)!= 0){	
 	    $pearsons = correlation(\@$model,\@qavec);
 	}
+
 #	if(stddev(\@$model) != 0 && stddev(\@dpvec)!= 0){	
 #	    $pearsons = correlation(\@$model,\@dpvec);
 #	}
@@ -266,7 +270,7 @@ $plotCorrVecs->gnuplot_plot_xy_style(@x, \%dpvariance, \%model1, \%model2, \%mod
 
 
 
-############CLICKER PLOT
+
 
 
 my @modelName = ("ACTUAL-STATE", "ACTUAL-TRANSITION", "HW-MODEL", "HD-MODEL");
@@ -291,9 +295,9 @@ foreach $model (@Models){
     print "\nMin,",$corrMin,",",$mincorridx;
     print "\nMax,",$corrMax,",",$maxcorridx;
 
-    %mypdf = pdf(@{$model});
+    my %mypdf = pdf(@{$model});
     print "\nModel PDF::\n";
-    foreach $key (sort keys %mypdf){
+    foreach my $key (sort keys %mypdf){
 	print "$key: $mypdf{$key}\n";
 
     }    
@@ -316,6 +320,7 @@ foreach $model (@Models){
 
 
     $localstats->clear();
+
 ###    $maxcorridx = 591;
 
 
@@ -326,27 +331,29 @@ foreach $model (@Models){
     my $DPMIN = $localstats->min();
   
 
-#    my @steppedarray = #
-#	map{ceil(($_-$DPMIN)/(($DPMAX-$DPMIN)/$MODELUNI)/1)} @activedpvector;
-
-    #Compute the correlation between binned array and model
-
     %mypdf = pdf(@steppedarray);
     print "\nPDF::\n";
-    foreach $key (sort keys %mypdf){
+    foreach my $key (sort keys %mypdf){
 	print "$key: $mypdf{$key}\n";
 
     }
 
+
+    my %myjpdf = ();
     %myjpdf = jpdf(@steppedarray, @$model);
     my $mymi = MI(@steppedarray, @$model);
     print "\nMI= $mymi \tJPDF::\n";
-    foreach $key1 (sort keys %myjpdf){
-	for $key2 (sort keys %{$myjpdf{$key1}}){
+    foreach my $key1 (sort keys %myjpdf){
+	for my $key2 (sort keys %{$myjpdf{$key1}}){
 	    print "$key1, $key2, $myjpdf{$key1}{$key2}\n";
 	}
     }
+    print3D($modelName[$modelidx], hh2aa(%myjpdf));
+    undef(%myjpdf);
 
+
+
+    ####PRINTING STUFF FOLLOWS#########
     $plot1->gnuplot_cmd('set y2label "Model"',
 			"set y2range [$MODELMIN:$MODELMAX]",
 			'set y2tics border',
@@ -362,6 +369,7 @@ foreach $model (@Models){
 
     #Create a generic X-axis
     my @x = [0 .. $#activedpvector];
+
 
     #create hashes
     my %activedp = ('x_values'=> @x, 
@@ -383,50 +391,24 @@ foreach $model (@Models){
     
     my $fname = $modelName[$modelidx].".ps";
 
+
     $plot1->gnuplot_hardcopy( $fname,
                             'postscript color',
                             'lw 2' );
 
     $plot1->gnuplot_set_plot_titles("Datapoints", "Model", "Binned");
-
-#    $plot1->gnuplot_plot_xy_style(@x, \%activedp, \%model1, \%binned);
     $plot1->gnuplot_plot_xy(\@{$model}, \@activedpvector);
 
+    ####END PRINTING GRAPHICS STUFF#######
 
-    
-
-    ##Let's check relation when the data is binned wrt to # of elements in the model 
-
-    #number of unique elements in model?
-  
-    #%freq = $localstats->frequency_distribution($MODELUNI);
-    #print $localstats->frequency_distribution();
-
-
-#    for (sort {$a <=> $b} keys %freq) {
-#	print "key = $_, count = $freq{$_}\n";
-#    }
-    
-        
-
-#print @steppedarray;	
-    
-    
 
     $localstats->clear();
-    #$localstats->add_data(@{$model});    
-	
-
-
-
-
-
-
     $modelidx++;
     print "\n";
 }
 
 sub print3D{ 
+    my($name,@printable) = (shift, @_);
     my $plotvector = Graphics::GnuplotIF->new(
 	title => "Original Current Source",
 	ylabel=> 'Rounds',
@@ -436,7 +418,7 @@ sub print3D{
 	style => "lines",
 	perrsist   => 1,
 	plot_also  => 1,
-	scriptfile => '3dplot.cmds',
+	scriptfile => $name.'3d.cmds',
 	);
 $plotvector->gnuplot_cmd(
     'set zlabel "i"',
@@ -451,12 +433,12 @@ $plotvector->gnuplot_cmd(
     'set contour base'
     );
 $plotvector->gnuplot_hardcopy( 
-    '3dplot.ps',
+    $name.'3d.ps',
     'postscript color',
     'lw 2' );
     
     $plotvector->gnuplot_set_plot_titles("Current Trace Per Round");
-    $plotvector->gnuplot_plot_3d(\@_);
+    $plotvector->gnuplot_plot_3d(\@printable);
 
 }
     
@@ -490,8 +472,7 @@ sub prob{
 sub pdf{
     #return pdf hash
     my(@datv) = @_; 
-    return map{ $_ => prob($_, @datv) } uniq(@datv);
-	
+    return map{ $_ => prob($_, @datv) } uniq(@datv);	
 }
 
 sub jprob ($$\@\@){
@@ -511,14 +492,14 @@ sub jpdf (\@\@){
     my($xref,$yref) = @_;
     my @xa = @{$xref};
     my @ya = @{$yref};
-    my %jpdf;
+    my %mjpdf;
 
     foreach $xel (uniq(@xa)){
 	foreach $yel (uniq(@ya)){
-	    $jpdf{$xel}{$yel} = jprob($xel, $yel, @xa, @ya);     
+	    $mjpdf{$xel}{$yel} = jprob($xel, $yel, @xa, @ya);     
 	}
     }
-    return %jpdf;
+    return %mjpdf;
 }
 
 sub MI(\@\@){
@@ -536,4 +517,20 @@ sub MI(\@\@){
 	}
     }
     return $count;
+}
+
+sub hh2aa(\%){
+    my($href) = @_;
+    my %hash = %{$href};
+    my @final;
+
+    foreach $key1 (sort keys %hash){
+	my @inarray;
+	foreach $key2 (sort keys %{$hash{$key1}}){
+	    
+	    push (@inarray, $hash{$key1}{$key2});
+	}
+	push (@final, [@inarray]);
+    }
+    return @final;
 }
