@@ -316,7 +316,13 @@ foreach $model (@Models){
 	map{ceil(($_-$DPMIN)/(($DPMAX-$DPMIN)/$MODELUNI)/1)} @activedpvector;
 
     #Compute the correlation between binned array and model
-    
+
+    %mypdf = pdf(@activedpvector);
+    print "\nPDF::\n";
+    foreach $key (sort keys %mypdf){
+	print "$key: $mypdf{$key}\n";
+
+    }
 
     $plot1->gnuplot_cmd('set y2label "Model"',
 			"set y2range [$MODELMIN:$MODELMAX]",
@@ -444,3 +450,19 @@ sub quantize{
     }
 }
 
+
+
+sub prob{
+   # return probability of val occurance
+    my($val, @datv) (shift, @_);
+    my $length = scalar @datv; 
+    return sum(map { $_==$val } @datv)/$length;
+
+}
+
+sub pdf{
+    #return pdf hash
+    my(@datv) = @_; 
+    return = map{ $_ => prob($_,@datv)} uniq(@datv);
+	
+}
