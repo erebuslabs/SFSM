@@ -356,14 +356,18 @@ foreach $model (@Models){
 
     my %myjpdf = ();
     %myjpdf = jpdf(@steppedarray, @$model);
+
     my $mymi = MI(@steppedarray, @$model);
 #    my $maxmi = MI(@steppedarray, @steppedarray);
     print "\nMI= $mymi \n";#JPDF::\n";
- #   foreach my $key1 (sort keys %myjpdf){
-#	for my $key2 (sort keys %{$myjpdf{$key1}}){
-#	    print "$key1, $key2, $myjpdf{$key1}{$key2}\n";
-#	}
-#    }
+    foreach my $key1 (sort keys %myjpdf){
+	print "\n $key1 | ";
+	for my $key2 (sort keys %{$myjpdf{$key1}}){
+
+	    print "$myjpdf{$key1}{$key2}\t";
+	}
+
+    }
     print3D($modelName[$modelidx], hh2aa(%myjpdf));
     undef(%myjpdf);
 
@@ -481,9 +485,7 @@ sub linearq{
    my($bits, @y) = (shift, @_);
    my ($min,$max) = minmax(@y);
    my $stepsize = ceil(($max-$min)/$bits);
-
    return map{ ($_<=>0)*floor((abs($_)/$stepsize)+.5) }@y;
-
 }
 
 
@@ -492,7 +494,6 @@ sub prob{
     my($val, @datv) = (shift, @_);
     my $length = scalar @datv; 
     return sum(map { $_==$val } @datv)/$length;
-
 }
 
 sub xmarg($\@\@){
@@ -530,7 +531,7 @@ sub jprob ($$\@\@){
     my @yvalid = map{ $_== $y } @yarr;
     my $ycount = sum(@yvalid);
     my $temp = sum( map{$yvalid[$_]*($xarr[$_]==$x) } (0..$#yarr));
-    return $temp/$ycount;
+    return $temp/$#yarr ;#$ycount;
 }	
 	
 
@@ -573,8 +574,7 @@ sub hh2aa(\%){
 
     foreach $key1 (sort keys %hash){
 	my @inarray;
-	foreach $key2 (sort keys %{$hash{$key1}}){
-	    
+	foreach $key2 (sort keys %{$hash{$key1}}){	    
 	    push (@inarray, $hash{$key1}{$key2});
 	}
 	push (@final, [@inarray]);
