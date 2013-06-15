@@ -5,7 +5,7 @@
 use POSIX;
 use Statistics::Descriptive;
 use Graphics::GnuplotIF qw(GnuplotIF);
-use List::Util qw(sum);
+use List::Util qw(sum min max);
 
 use List::MoreUtils qw(uniq minmax);
 #use Math::GSL::Statistics qw /:all/;
@@ -16,6 +16,8 @@ sub jpdf (\@\@);
 sub jprob($$\@\@);
 sub MI(\@\@);
 sub hh2aa(\%);
+sub xmarg($\@\@);
+sub ymarg($\@\@);
 #############
 
 
@@ -59,7 +61,8 @@ while(<$dfm>){
 		
 #At this point,compute items concerning this single vec
 		#e.g. MAX curr 
-		my @qa = quantize(15, @data);
+		#my @qa = quantize(15, @data);
+		my @qa = linearq(15, @data);
 		$localstats->add_data(@data);
 		
 		push @maxcurr, $localstats->max(); #maxcurr holds maxcurr per round 
@@ -175,7 +178,8 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
     
     $model_idx = 0;
     #compute the correlation for against each model
-    my @qavec = quantize(15, @dpvec);
+#    my @qavec = quantize(15, @dpvec);
+    my @qavec = linearq(15, @dpvec);
     foreach $model (@Models){
 	my $pearsons = 0;
 #	print "\nLength of Model ", scalar(@$model);
@@ -228,7 +232,7 @@ my $plotCorrVecs = Graphics::GnuplotIF->new(
 $plotCorrVecs->gnuplot_cmd('set y2label "Model"',
 		    "set y2range [-1:1]",
 		    'set y2tics border',
-		    #"set y1range [:]",
+		    #"set yrange [:]",
 		    'set grid',
 		    'set key outside bottom',
 		    #'set linestyle 1 lt 2 lw 3',
@@ -265,8 +269,10 @@ $plotCorrVecs->gnuplot_hardcopy( $fname,
 			  'postscript color',
 			  'lw 2' );
 
-$plotCorrVecs->gnuplot_set_plot_titles("Variance", "ActualState", "ActualTran", "HW","HD");
-$plotCorrVecs->gnuplot_plot_xy_style(@x, \%dpvariance, \%model1, \%model2, \%model3, \%model4);
+#$plotCorrVecs->gnuplot_set_plot_titles("Variance", "ActualState", "ActualTran", "HW","HD");
+$plotCorrVecs->gnuplot_set_plot_titles("ActualState", "ActualTran", "HW","HD");
+#$plotCorrVecs->gnuplot_plot_xy_style(@x, \%dpvariance, \%model1, \%model2, \%model3, \%model4);
+$plotCorrVecs->gnuplot_plot_xy_style(@x, \%model1, \%model2, \%model3, \%model4);
 
 
 
@@ -280,6 +286,7 @@ my $modelidx = 0;
 foreach $model (@Models){
     $localstats->clear();
     $localstats->add_data(@{$model});    
+
     my $MODELMIN = ($localstats->min())-5;
     my $MODELMAX = ($localstats->max())+5;
     my $MODELUNI = scalar(uniq(@{$model})); 
@@ -288,7 +295,8 @@ foreach $model (@Models){
     $localstats->add_data(@{$modelCorr[$modelidx]});    
     print "\nModel Correlation,".$modelName[$modelidx];
     my $maxcorridx = $localstats->maxdex();
-    my $mincorridx = $localstats->mindex();
+
+   my $mincorridx = $localstats->mindex();
     my $corrMin =$localstats->min();
     my $corrMax = $localstats->max();
 
@@ -296,9 +304,10 @@ foreach $model (@Models){
     print "\nMax,",$corrMax,",",$maxcorridx;
 
     my %mypdf = pdf(@{$model});
-    print "\nModel PDF::\n";
+    my $mentropy = entropy(@{$model});
+    print "\nModel PDF (e=$mentropy)::\n";
     foreach my $key (sort keys %mypdf){
-	print "$key: $mypdf{$key}\n";
+	print "$key, $mypdf{$key}\n";
 
     }    
 
@@ -321,20 +330,26 @@ foreach $model (@Models){
 
     $localstats->clear();
 
-###    $maxcorridx = 591;
+#    $maxcorridx = 611;
 
 
     my @activedpvector = @{$allDPVecs[$maxcorridx]};
-    my @steppedarray = @{$allQAVecs[$maxcorridx]};
+    
+    #my @steppedarray = @{$allQAVecs[$maxcorridx]};
+#    my $model_el = ($MODEL_MAX - $MODEL_MIN)   
+    my @steppedarray = linearq(16, @activedpvector);
     $localstats->add_data(@activedpvector);
     my $DPMAX = $localstats->max();
     my $DPMIN = $localstats->min();
   
 
     %mypdf = pdf(@steppedarray);
-    print "\nPDF::\n";
+    my $mentropy = entropy(@steppedarray);
+
+    print "\nPDF of stepped array (e=$mentropy) \@ idx = $maxcorridx ::\n";
+
     foreach my $key (sort keys %mypdf){
-	print "$key: $mypdf{$key}\n";
+	print "$key, $mypdf{$key}\n";
 
     }
 
@@ -342,22 +357,25 @@ foreach $model (@Models){
     my %myjpdf = ();
     %myjpdf = jpdf(@steppedarray, @$model);
     my $mymi = MI(@steppedarray, @$model);
-    print "\nMI= $mymi \tJPDF::\n";
-    foreach my $key1 (sort keys %myjpdf){
-	for my $key2 (sort keys %{$myjpdf{$key1}}){
-	    print "$key1, $key2, $myjpdf{$key1}{$key2}\n";
-	}
-    }
+#    my $maxmi = MI(@steppedarray, @steppedarray);
+    print "\nMI= $mymi \n";#JPDF::\n";
+ #   foreach my $key1 (sort keys %myjpdf){
+#	for my $key2 (sort keys %{$myjpdf{$key1}}){
+#	    print "$key1, $key2, $myjpdf{$key1}{$key2}\n";
+#	}
+#    }
     print3D($modelName[$modelidx], hh2aa(%myjpdf));
     undef(%myjpdf);
 
-
+    my $DATAMIN = min(@activedpvector);
+    my $DATAMAX = max(@activedpvector);
 
     ####PRINTING STUFF FOLLOWS#########
     $plot1->gnuplot_cmd('set y2label "Model"',
-			"set y2range [$MODELMIN:$MODELMAX]",
+#			"set y2range [$MODELMIN:$MODELMAX]",
 			'set y2tics border',
-			#"set y1range [:]",
+#			"set yrange [$DATAMIN:$DATAMAX]",
+                        #"set yrange [:]",
 			'set grid',
 			'set key outside bottom',
 			#'set linestyle 1 lt 2 lw 3',
@@ -397,8 +415,9 @@ foreach $model (@Models){
                             'lw 2' );
 
     $plot1->gnuplot_set_plot_titles("Datapoints", "Model", "Binned");
-    $plot1->gnuplot_plot_xy(\@{$model}, \@activedpvector);
-
+   $plot1->gnuplot_plot_xy(@x, \@{$model}, \@steppedarray);
+#   $plot1->gnuplot_plot_xy(\@x, \@steppedarray, \@activedpvector);
+#$plot1->gnuplot_plot_xy(\@steppedarray, \@activedpvector);
     ####END PRINTING GRAPHICS STUFF#######
 
 
@@ -446,7 +465,6 @@ $plotvector->gnuplot_hardcopy(
 
 
 sub quantize{
-
     my($bits, @y) = (shift, @_);
     my $eps = 0;
     my ($min,$max) = minmax(@y);
@@ -459,6 +477,14 @@ sub quantize{
     }
 }
 
+sub linearq{
+   my($bits, @y) = (shift, @_);
+   my ($min,$max) = minmax(@y);
+   my $stepsize = ceil(($max-$min)/$bits);
+
+   return map{ ($_<=>0)*floor((abs($_)/$stepsize)+.5) }@y;
+
+}
 
 
 sub prob{
@@ -468,6 +494,26 @@ sub prob{
     return sum(map { $_==$val } @datv)/$length;
 
 }
+
+sub xmarg($\@\@){
+   my($x,$xarref,$yarref) = @_;
+   my @xarr = @$xarref;
+   my @yarr = @$yarref;
+   my @uniqys = uniq(@yarr);
+
+   return sum(map{jprob($x,$_,@xarr,@yarr)} @uniqys);
+
+}
+
+sub ymarg($\@\@){
+   my($y,$xarref,$yarref) = @_;
+   my @xarr = @$xarref;
+   my @yarr = @$yarref;
+   my @uniqxs = uniq(@xarr);
+
+   return sum(map{jprob($_,$y,@xarr,@yarr)} @uniqxs);
+}
+
 
 sub pdf{
     #return pdf hash
@@ -510,9 +556,10 @@ sub MI(\@\@){
     foreach $xel (sort(uniq(@xa))){
 	foreach $yel (sort(uniq(@ya))){
 	    my $xy = jprob($xel, $yel, @xa, @ya);
-	    my $inner = $xy/(prob($xel,@xa)*prob($yel,@ya));
+	    my $inner = $xy/(xmarg($xel,@xa,@ya)*ymarg($yel,@xa,@ya));
+#(prob($xel,@xa)*prob($yel,@ya));
 	    if($inner != 0){
-	       $count+= $xy*log($inner);
+	       $count+= $xy*log2($inner);
 	    }
 	}
     }
@@ -533,4 +580,13 @@ sub hh2aa(\%){
 	push (@final, [@inarray]);
     }
     return @final;
+}
+
+sub entropy{
+    my @vect = @_;
+    return -1*sum( map{prob($_,@vect)*log2(prob($_,@vect))} uniq(@vect));
+}
+
+sub log2{
+    return log(shift)/log(2);
 }
