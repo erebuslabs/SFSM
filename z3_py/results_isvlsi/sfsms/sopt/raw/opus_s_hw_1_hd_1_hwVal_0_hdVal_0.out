@@ -1,0 +1,7 @@
+Sat, 9, st_RMACK, st_WMACK, st_read1, st_init0_n, st_init0, st_START, st_init1_n, st_write0, st_RMACK_n, st_init4, st_IOwait_n, st_WMACK_n, st_init1, st_read0, st_init2, st_init4_n, st_IOwait,  
+ASSIGN, 9, 408, 449, 267, 269, 424, 330, 142, 89, 275, 147, 360, 338, 282, 58, 393, 114, 202,  
+Sat, 8, st_RMACK, st_WMACK, st_read1, st_init0_n, st_init0, st_START, st_init1_n, st_write0, st_RMACK_n, st_init4, st_IOwait_n, st_WMACK_n, st_init1, st_read0, st_init2, st_init4_n, st_IOwait,  
+ASSIGN, 8, 84, 196, 97, 134, 50, 7, 137, 138, 74, 200, 67, 88, 37, 13, 162, 164, 145,  
+Sat, 7, st_RMACK, st_WMACK, st_read1, st_init0_n, st_init0, st_START, st_init1_n, st_write0, st_RMACK_n, st_init4, st_IOwait_n, st_WMACK_n, st_init1, st_read0, st_init2, st_init4_n, st_IOwait,  
+ASSIGN, 7, 97, 26, 25, 22, 37, 50, 14, 76, 11, 69, 7, 112, 98, 82, 41, 19, 52,  
+NotSat, 6,  

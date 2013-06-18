@@ -1,0 +1,13 @@
+	parameter  st_RMACK =  4'b0000;
+	parameter  st_write0 =  4'b0001;
+	parameter  st_WMACK =  4'b0010;
+	parameter  st_init4 =  4'b0011;
+	parameter  st_read1 =  4'b0100;
+	parameter  st_init1 =  4'b0101;
+	parameter  st_read0 =  4'b0110;
+	parameter  st_init0 =  4'b0111;
+	parameter  st_START =  4'b1000;
+	parameter  st_IOwait =  4'b1001;
+	parameter  st_init2 =  4'b1010;
+	reg[3:0] State;
+	reg[3:0] NextState;
