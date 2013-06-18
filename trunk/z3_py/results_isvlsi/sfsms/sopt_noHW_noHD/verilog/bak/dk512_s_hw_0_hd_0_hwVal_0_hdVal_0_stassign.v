@@ -1,0 +1,17 @@
+	parameter  st_state_3 =  4'b1111;
+	parameter  st_state_14 =  4'b1010;
+	parameter  st_state_6 =  4'b1101;
+	parameter  st_state_12 =  4'b1001;
+	parameter  st_state_9 =  4'b0101;
+	parameter  st_state_5 =  4'b0010;
+	parameter  st_state_2 =  4'b1011;
+	parameter  st_state_10 =  4'b0001;
+	parameter  st_state_4 =  4'b0100;
+	parameter  st_state_1 =  4'b1110;
+	parameter  st_state_7 =  4'b0111;
+	parameter  st_state_13 =  4'b1000;
+	parameter  st_state_11 =  4'b0000;
+	parameter  st_state_15 =  4'b1100;
+	parameter  st_state_8 =  4'b0011;
+	reg[3:0] State;
+	reg[3:0] NextState;

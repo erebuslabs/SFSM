@@ -1,0 +1,7 @@
+Sat, 8, st_RMACK, st_write0, st_WMACK, st_init4, st_read1, st_init1, st_read0, st_init0, st_START, st_IOwait, st_init2,  
+ASSIGN, 8, 20, 72, 65, 96, 132, 66, 6, 130, 3, 68, 80,  
+Sat, 7, st_RMACK, st_write0, st_WMACK, st_init4, st_read1, st_init1, st_read0, st_init0, st_START, st_IOwait, st_init2,  
+ASSIGN, 7, 33, 40, 24, 17, 18, 36, 34, 12, 10, 48, 20,  
+Sat, 6, st_RMACK, st_write0, st_WMACK, st_init4, st_read1, st_init1, st_read0, st_init0, st_START, st_IOwait, st_init2,  
+ASSIGN, 6, 23, 51, 53, 15, 46, 43, 54, 58, 27, 39, 45,  
+NotSat, 5,  
