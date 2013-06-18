@@ -14,16 +14,22 @@
 #
 
 use POSIX qw(ceil);
-my $numStates = shift;
-my $prefix = shift;
+my $filename = $ARGV[0];
+
+open(my $fh, '<:encoding(UTF-8)', $filename)
+    or die "Could not open file '$filename' $!";
+
+my @farray = <$fh>;
+my @states = grep /parameter/, @farray;
+my $bitsneeded  = ceil(log($#states+1)/log(2));
 
 
-my $bitsneeded  = ceil(log($numStates)/log(2));
-for($i = 0; $i < $numStates; $i++){
+for($i = 0; $i < $#states+1; $i++){
     $bineqv = $i;
-    my $statenum = $i;
+    #my $statenum = $i;
     $bineqv = substr(unpack("B32", pack("N", $bineqv)), -1*$bitsneeded);
-    print "\tparameter $prefix$statenum = $values[1]\'b$bineqv;\n";
+    $states[$i] =~ s/\d+\'b\d+;/$bitsneeded\'b$bineqv;/g;
+    print $states[$i]; #"\tparameter $states[$i] = $bitsneeded\'b$bineqv;\n";
 }
 
 $len = $bitsneeded-1;
