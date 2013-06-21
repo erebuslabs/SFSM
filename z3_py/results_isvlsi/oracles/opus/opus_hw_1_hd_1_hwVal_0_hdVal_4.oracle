@@ -1,0 +1,67 @@
+#!/usr/bin/perl
+use Switch;
+use enum qw(IOwait RMACK START WMACK init0 init1 init2 init4 read0 read1 write0 );
+$currState = 0;
+#Open Data File from command line
+my $filename = $ARGV[0];
+open  (fh, "<", $filename);
+#every 4+1 are used as a single round input
+my @inputs = ($data =~ /(d)s*(d)s*(d)s*(d)s*(d)s*/g);
+my $HW;
+my $HD;
+foreach $temp (<fh>) {
+chomp($temp);
+@ptext = split(' ',$temp);
+print "$currState\t";
+my $nextState = $currState;
+my $trans = -1;
+	switch($currState){
+		case(START){
+			if($ptext[2] == 1 ){$nextState = init0; $trans = START.".".init0; $HW = 3;$HD = 4;}
+		}
+		case(init0){
+			if($ptext[2] == 1 ){$nextState = init0; $trans = init0.".".init0; $HW = 3;$HD = 0;}
+			elsif($ptext[2] == 0 ){$nextState = init1; $trans = init0.".".init1; $HW = 3;$HD = 4;}
+		}
+		case(init1){
+			if($ptext[2] == 0  && $ptext[3] == 0 ){$nextState = init1; $trans = init1.".".init1; $HW = 3;$HD = 0;}
+			elsif($ptext[2] == 0  && $ptext[3] == 1 ){$nextState = init2; $trans = init1.".".init2; $HW = 3;$HD = 4;}
+		}
+		case(init2){
+			if($ptext[2] == 0 ){$nextState = init4; $trans = init2.".".init4; $HW = 3;$HD = 4;}
+		}
+		case(init4){
+			if($ptext[2] == 0  && $ptext[3] == 1 ){$nextState = init4; $trans = init4.".".init4; $HW = 3;$HD = 0;}
+			elsif($ptext[2] == 0  && $ptext[3] == 0 ){$nextState = IOwait; $trans = init4.".".IOwait; $HW = 3;$HD = 4;}
+		}
+		case(IOwait){
+			if($ptext[0] == 0  && $ptext[1] == 0  && $ptext[2] == 0  && $ptext[3] == 0 ){$nextState = IOwait; $trans = IOwait.".".IOwait; $HW = 3;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 0  && $ptext[3] == 0 ){$nextState = init1; $trans = IOwait.".".init1; $HW = 3;$HD = 4;}
+			elsif($ptext[0] == 0  && $ptext[1] == 1  && $ptext[2] == 0  && $ptext[3] == 0  && $ptext[4] == 0 ){$nextState = read0; $trans = IOwait.".".read0; $HW = 3;$HD = 4;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1  && $ptext[2] == 0  && $ptext[3] == 0  && $ptext[4] == 0 ){$nextState = write0; $trans = IOwait.".".write0; $HW = 3;$HD = 4;}
+			elsif($ptext[0] == 0  && $ptext[1] == 1  && $ptext[2] == 0  && $ptext[3] == 0  && $ptext[4] == 1 ){$nextState = RMACK; $trans = IOwait.".".RMACK; $HW = 3;$HD = 4;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1  && $ptext[2] == 0  && $ptext[3] == 0  && $ptext[4] == 1 ){$nextState = WMACK; $trans = IOwait.".".WMACK; $HW = 3;$HD = 4;}
+			elsif($ptext[2] == 0  && $ptext[3] == 1 ){$nextState = init2; $trans = IOwait.".".init2; $HW = 3;$HD = 4;}
+		}
+		case(RMACK){
+			if($ptext[2] == 0  && $ptext[4] == 0 ){$nextState = RMACK; $trans = RMACK.".".RMACK; $HW = 3;$HD = 0;}
+			elsif($ptext[2] == 0  && $ptext[4] == 1 ){$nextState = read0; $trans = RMACK.".".read0; $HW = 3;$HD = 4;}
+		}
+		case(WMACK){
+			if($ptext[2] == 0  && $ptext[4] == 0 ){$nextState = WMACK; $trans = WMACK.".".WMACK; $HW = 3;$HD = 0;}
+			elsif($ptext[2] == 0  && $ptext[4] == 1 ){$nextState = write0; $trans = WMACK.".".write0; $HW = 3;$HD = 4;}
+		}
+		case(read0){
+			if($ptext[2] == 0 ){$nextState = read1; $trans = read0.".".read1; $HW = 3;$HD = 4;}
+		}
+		case(read1){
+			if($ptext[2] == 0 ){$nextState = IOwait; $trans = read1.".".IOwait; $HW = 3;$HD = 4;}
+		}
+		case(write0){
+			if($ptext[2] == 0 ){$nextState = IOwait; $trans = write0.".".IOwait; $HW = 3;$HD = 4;}
+		}
+	}
+print "$trans\t$HW\t$HD\n";
+	$currState = $nextState;
+}#endwhile
+close(FILE);

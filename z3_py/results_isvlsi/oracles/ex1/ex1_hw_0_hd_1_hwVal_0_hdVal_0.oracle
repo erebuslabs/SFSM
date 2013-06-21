@@ -1,0 +1,199 @@
+#!/usr/bin/perl
+use Switch;
+use enum qw(st1 st10 st11 st12 st13 st14 st15 st16 st17 st18 st19 st2 st20 st3 st4 st5 st6 st7 st8 st9 );
+$currState = 0;
+#Open Data File from command line
+my $filename = $ARGV[0];
+open  (fh, "<", $filename);
+#every 8+1 are used as a single round input
+my @inputs = ($data =~ /(d)s*(d)s*(d)s*(d)s*(d)s*(d)s*(d)s*(d)s*(d)s*/g);
+my $HW;
+my $HD;
+foreach $temp (<fh>) {
+chomp($temp);
+@ptext = split(' ',$temp);
+print "$currState\t";
+my $nextState = $currState;
+my $trans = -1;
+	switch($currState){
+		case(st1){
+			if($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 1  && $ptext[3] == 1 ){$nextState = st2; $trans = st1.".".st2; $HW = 5;$HD = 4;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st1.".".st4; $HW = 3;$HD = 4;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 0  && $ptext[3] == 0 ){$nextState = st3; $trans = st1.".".st3; $HW = 5;$HD = 4;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 1  && $ptext[3] == 0 ){$nextState = st1; $trans = st1.".".st1; $HW = 3;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 0  && $ptext[3] == 1 ){$nextState = st2; $trans = st1.".".st2; $HW = 5;$HD = 4;}
+		}
+		case(st2){
+			if($ptext[1] == 1  && $ptext[4] == 1 ){$nextState = st5; $trans = st2.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1 ){$nextState = st6; $trans = st2.".".st6; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 0 ){$nextState = st2; $trans = st2.".".st2; $HW = 5;$HD = 0;}
+		}
+		case(st3){
+			if($ptext[1] == 0 ){$nextState = st7; $trans = st3.".".st7; $HW = 3;$HD = 4;}
+		}
+		case(st4){
+			if($ptext[1] == 0  && $ptext[2] == 1  && $ptext[3] == 1 ){$nextState = st2; $trans = st4.".".st2; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[3] == 0 ){$nextState = st3; $trans = st4.".".st3; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[3] == 0 ){$nextState = st1; $trans = st4.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[3] == 1 ){$nextState = st2; $trans = st4.".".st2; $HW = 5;$HD = 4;}
+		}
+		case(st5){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st5.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[4] == 1  && $ptext[5] == 0  && $ptext[6] == 0 ){$nextState = st5; $trans = st5.".".st5; $HW = 3;$HD = 0;}
+			elsif($ptext[4] == 1  && $ptext[5] == 1  && $ptext[6] == 0 ){$nextState = st5; $trans = st5.".".st5; $HW = 3;$HD = 0;}
+			elsif($ptext[4] == 1  && $ptext[5] == 0  && $ptext[6] == 1 ){$nextState = st8; $trans = st5.".".st8; $HW = 1;$HD = 4;}
+			elsif($ptext[4] == 1  && $ptext[5] == 1  && $ptext[6] == 1 ){$nextState = st8; $trans = st5.".".st8; $HW = 1;$HD = 4;}
+		}
+		case(st6){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st6.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st6.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st6.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st9; $trans = st6.".".st9; $HW = 1;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st6; $trans = st6.".".st6; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st10; $trans = st6.".".st10; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st9; $trans = st6.".".st9; $HW = 1;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st6; $trans = st6.".".st6; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = 10; $trans = st6.".".10; $HW = 3;$HD = 4;}
+		}
+		case(st7){
+			if($ptext[1] == 0  && $ptext[4] == 0 ){$nextState = st7; $trans = st7.".".st7; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1 ){$nextState = st5; $trans = st7.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1 ){$nextState = st11; $trans = st7.".".st11; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1 ){$nextState = st12; $trans = st7.".".st12; $HW = 3;$HD = 4;}
+		}
+		case(st8){
+			if($ptext[5] == 1 ){$nextState = st1; $trans = st8.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[5] == 0 ){$nextState = st1; $trans = st8.".".st1; $HW = 3;$HD = 4;}
+		}
+		case(st9){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st9.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st9.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st9.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st13; $trans = st9.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st9; $trans = st9.".".st9; $HW = 1;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st14; $trans = st9.".".st14; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st13; $trans = st9.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st9; $trans = st9.".".st9; $HW = 1;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st14; $trans = st9.".".st14; $HW = 5;$HD = 4;}
+		}
+		case(st10){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st10.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st10.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st10.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st15; $trans = st10.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st10; $trans = st10.".".st10; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st15; $trans = st10.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st10; $trans = st10.".".st10; $HW = 3;$HD = 0;}
+		}
+		case(st11){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st11.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st11.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st11.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st16; $trans = st11.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st11; $trans = st11.".".st11; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st16; $trans = st11.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st13; $trans = st11.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st13; $trans = st11.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st12; $trans = st11.".".st12; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st16; $trans = st11.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st11; $trans = st11.".".st11; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st16; $trans = st11.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st13; $trans = st11.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st13; $trans = st11.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st12; $trans = st11.".".st12; $HW = 3;$HD = 4;}
+		}
+		case(st12){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st12.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st12.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st12.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st15; $trans = st12.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st12; $trans = st12.".".st12; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st15; $trans = st12.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st15; $trans = st12.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st12; $trans = st12.".".st12; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st15; $trans = st12.".".st15; $HW = 7;$HD = 4;}
+		}
+		case(st13){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st13.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st13.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st13.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st15; $trans = st13.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st13; $trans = st13.".".st13; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st15; $trans = st13.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st15; $trans = st13.".".st15; $HW = 7;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st13; $trans = st13.".".st13; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st15; $trans = st13.".".st15; $HW = 7;$HD = 4;}
+		}
+		case(st14){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st14.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st14.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st14.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st16; $trans = st14.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st14; $trans = st14.".".st14; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st16; $trans = st14.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st13; $trans = st14.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st13; $trans = st14.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st16; $trans = st14.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st14; $trans = st14.".".st14; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st16; $trans = st14.".".st16; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st13; $trans = st14.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st13; $trans = st14.".".st13; $HW = 3;$HD = 4;}
+		}
+		case(st15){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st15.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st15.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st15.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st17; $trans = st15.".".st17; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st15; $trans = st15.".".st15; $HW = 7;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st17; $trans = st15.".".st17; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st15; $trans = st15.".".st15; $HW = 7;$HD = 0;}
+		}
+		case(st16){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st16.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st16.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st16.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st16; $trans = st16.".".st16; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st16; $trans = st16.".".st16; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st16; $trans = st16.".".st16; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st16; $trans = st16.".".st16; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st16; $trans = st16.".".st16; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st16; $trans = st16.".".st16; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 1 ){$nextState = st13; $trans = st16.".".st13; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1  && $ptext[8] == 0 ){$nextState = st13; $trans = st16.".".st13; $HW = 3;$HD = 4;}
+		}
+		case(st17){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st17.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st17.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st17.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st17; $trans = st17.".".st17; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st18; $trans = st17.".".st18; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st17; $trans = st17.".".st17; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st18; $trans = st17.".".st18; $HW = 3;$HD = 4;}
+		}
+		case(st18){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st18.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st18.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st18.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st18; $trans = st18.".".st18; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st19; $trans = st18.".".st19; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st18; $trans = st18.".".st18; $HW = 3;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st19; $trans = st18.".".st19; $HW = 5;$HD = 4;}
+		}
+		case(st19){
+			if($ptext[4] == 0  && $ptext[5] == 1 ){$nextState = st1; $trans = st19.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st19.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 1  && $ptext[4] == 1  && $ptext[5] == 0 ){$nextState = st5; $trans = st19.".".st5; $HW = 3;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 0 ){$nextState = st19; $trans = st19.".".st19; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 1  && $ptext[7] == 1 ){$nextState = st20; $trans = st19.".".st20; $HW = 5;$HD = 4;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 0 ){$nextState = st19; $trans = st19.".".st19; $HW = 5;$HD = 0;}
+			elsif($ptext[1] == 0  && $ptext[4] == 1  && $ptext[5] == 0  && $ptext[7] == 1 ){$nextState = st20; $trans = st19.".".st20; $HW = 5;$HD = 4;}
+		}
+		case(st20){
+			if($ptext[5] == 1 ){$nextState = st1; $trans = st20.".".st1; $HW = 3;$HD = 4;}
+			elsif($ptext[5] == 0 ){$nextState = st1; $trans = st20.".".st1; $HW = 3;$HD = 4;}
+		}
+	}
+print "$trans\t$HW\t$HD\n";
+	$currState = $nextState;
+}#endwhile
+close(FILE);

@@ -1,0 +1,111 @@
+#!/usr/bin/perl
+use Switch;
+use enum qw(st0 st1 st10 st11 st12 st13 st14 st15 st2 st3 st4 st5 st6 st7 st8 st9 );
+$currState = 0;
+#Open Data File from command line
+my $filename = $ARGV[0];
+open  (fh, "<", $filename);
+#every 6+1 are used as a single round input
+my @inputs = ($data =~ /(d)s*(d)s*(d)s*(d)s*(d)s*(d)s*(d)s*/g);
+my $HW;
+my $HD;
+foreach $temp (<fh>) {
+chomp($temp);
+@ptext = split(' ',$temp);
+print "$currState\t";
+my $nextState = $currState;
+my $trans = -1;
+	switch($currState){
+		case(st11){
+			if($ptext[0] == 0 ){$nextState = st11; $trans = st11.".".st11; $HW = 2;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[6] == 0 ){$nextState = st10; $trans = st11.".".st10; $HW = 4;$HD = 2;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[6] == 1 ){$nextState = st10; $trans = st11.".".st10; $HW = 4;$HD = 2;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1  && $ptext[6] == 0 ){$nextState = st4; $trans = st11.".".st4; $HW = 2;$HD = 4;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1  && $ptext[6] == 1 ){$nextState = st4; $trans = st11.".".st4; $HW = 2;$HD = 4;}
+		}
+		case(st10){
+			if($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 0 ){$nextState = st10; $trans = st10.".".st10; $HW = 4;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 1 ){$nextState = st12; $trans = st10.".".st12; $HW = 3;$HD = 1;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 1  && $ptext[4] == 0 ){$nextState = st7; $trans = st10.".".st7; $HW = 2;$HD = 2;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st10.".".st4; $HW = 2;$HD = 2;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st10.".".st4; $HW = 2;$HD = 2;}
+		}
+		case(st7){
+			if($ptext[0] == 1  && $ptext[1] == 0 ){$nextState = st6; $trans = st7.".".st6; $HW = 3;$HD = 3;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st7.".".st4; $HW = 2;$HD = 2;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st7.".".st4; $HW = 2;$HD = 2;}
+		}
+		case(st6){
+			if($ptext[0] == 1  && $ptext[1] == 0  && $ptext[4] == 0 ){$nextState = st7; $trans = st6.".".st7; $HW = 2;$HD = 3;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[4] == 1 ){$nextState = st12; $trans = st6.".".st12; $HW = 3;$HD = 2;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st6.".".st4; $HW = 2;$HD = 3;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st6.".".st4; $HW = 2;$HD = 3;}
+		}
+		case(st12){
+			if($ptext[0] == 1  && $ptext[1] == 0 ){$nextState = st1; $trans = st12.".".st1; $HW = 2;$HD = 3;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st12.".".st4; $HW = 2;$HD = 3;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st12.".".st4; $HW = 2;$HD = 3;}
+		}
+		case(st1){
+			if($ptext[0] == 1  && $ptext[1] == 0  && $ptext[3] == 1 ){$nextState = st12; $trans = st1.".".st12; $HW = 3;$HD = 3;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[4] == 1 ){$nextState = st12; $trans = st1.".".st12; $HW = 3;$HD = 3;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[3] == 0  && $ptext[4] == 0 ){$nextState = st0; $trans = st1.".".st0; $HW = 0;$HD = 2;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st1.".".st4; $HW = 2;$HD = 2;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st1.".".st4; $HW = 2;$HD = 2;}
+		}
+		case(st0){
+			if($ptext[0] == 1  && $ptext[1] == 0  && $ptext[5] == 0 ){$nextState = st0; $trans = st0.".".st0; $HW = 0;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[5] == 1 ){$nextState = st8; $trans = st0.".".st8; $HW = 1;$HD = 1;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st0.".".st4; $HW = 2;$HD = 2;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st0.".".st4; $HW = 2;$HD = 2;}
+		}
+		case(st8){
+			if($ptext[0] == 1  && $ptext[1] == 0 ){$nextState = st9; $trans = st8.".".st9; $HW = 1;$HD = 2;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st8.".".st4; $HW = 2;$HD = 3;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st8.".".st4; $HW = 2;$HD = 3;}
+		}
+		case(st9){
+			if($ptext[0] == 1  && $ptext[1] == 0  && $ptext[5] == 0 ){$nextState = st9; $trans = st9.".".st9; $HW = 1;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[5] == 1 ){$nextState = st3; $trans = st9.".".st3; $HW = 3;$HD = 2;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st9.".".st4; $HW = 2;$HD = 1;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st9.".".st4; $HW = 2;$HD = 1;}
+		}
+		case(st3){
+			if($ptext[0] == 1  && $ptext[1] == 0 ){$nextState = st2; $trans = st3.".".st2; $HW = 3;$HD = 2;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st3.".".st4; $HW = 2;$HD = 1;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st3.".".st4; $HW = 2;$HD = 1;}
+		}
+		case(st2){
+			if($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 0  && $ptext[3] == 1 ){$nextState = st2; $trans = st2.".".st2; $HW = 3;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[3] == 0  && $ptext[4] == 1 ){$nextState = st10; $trans = st2.".".st10; $HW = 4;$HD = 1;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[3] == 0  && $ptext[4] == 0 ){$nextState = st0; $trans = st2.".".st0; $HW = 0;$HD = 3;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0  && $ptext[2] == 1  && $ptext[3] == 1 ){$nextState = st3; $trans = st2.".".st3; $HW = 3;$HD = 2;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st2.".".st4; $HW = 2;$HD = 1;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st4; $trans = st2.".".st4; $HW = 2;$HD = 1;}
+		}
+		case(st4){
+			if($ptext[0] == 0  && $ptext[5] == 0 ){$nextState = st4; $trans = st4.".".st4; $HW = 2;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1  && $ptext[5] == 0 ){$nextState = st4; $trans = st4.".".st4; $HW = 2;$HD = 0;}
+			elsif($ptext[0] == 0  && $ptext[5] == 1 ){$nextState = st11; $trans = st4.".".st11; $HW = 2;$HD = 4;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0 ){$nextState = st10; $trans = st4.".".st10; $HW = 4;$HD = 2;}
+			elsif($ptext[0] == 1  && $ptext[1] == 1  && $ptext[5] == 1 ){$nextState = st5; $trans = st4.".".st5; $HW = 1;$HD = 3;}
+		}
+		case(st5){
+			if($ptext[0] == 1  && $ptext[1] == 1 ){$nextState = st5; $trans = st5.".".st5; $HW = 1;$HD = 0;}
+			elsif($ptext[0] == 1  && $ptext[1] == 0 ){$nextState = st10; $trans = st5.".".st10; $HW = 4;$HD = 3;}
+			elsif($ptext[0] == 0 ){$nextState = st4; $trans = st5.".".st4; $HW = 2;$HD = 3;}
+		}
+		case(st13){
+			if($ptext[0] == 0 ){$nextState = st4; $trans = st13.".".st4; $HW = 2;$HD = 1;}
+		}
+		case(st14){
+			if($ptext[0] == 0 ){$nextState = st4; $trans = st14.".".st4; $HW = 2;$HD = 2;}
+		}
+		case(st15){
+			if($ptext[0] == 0 ){$nextState = st4; $trans = st15.".".st4; $HW = 2;$HD = 2;}
+		}
+	}
+print "$trans\t$HW\t$HD\n";
+	$currState = $nextState;
+}#endwhile
+close(FILE);
