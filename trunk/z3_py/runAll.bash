@@ -1,4 +1,4 @@
-B1;2501;0c#!/bin/bash
+#!/bin/bash
 
 for file in $@; do
     base=${file:0:${#file}-6};

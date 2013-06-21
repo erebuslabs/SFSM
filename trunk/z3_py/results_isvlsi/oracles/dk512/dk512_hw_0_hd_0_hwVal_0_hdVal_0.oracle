@@ -1,0 +1,113 @@
+#!/usr/bin/perl
+use Switch;
+use enum qw(state_1 state_10 state_11 state_12 state_13 state_14 state_15 state_2 state_3 state_4 state_5 state_6 state_7 state_8 state_9 );
+$currState = 0;
+#Open Data File from command line
+my $filename = $ARGV[0];
+open  (fh, "<", $filename);
+#every 0+1 are used as a single round input
+my @inputs = ($data =~ /(d)s*/g);
+my $HW;
+my $HD;
+foreach $temp (<fh>) {
+chomp($temp);
+@ptext = split(' ',$temp);
+print "$currState\t";
+my $nextState = $currState;
+my $trans = -1;
+	switch($currState){
+		case(state_1){
+			if($ptext[0] == 0 ){$nextState = state_8; $trans = state_1.".".state_8; $HW = 2;$HD = 3;}
+		}
+		case(state_2){
+			if($ptext[0] == 0 ){$nextState = state_4; $trans = state_2.".".state_4; $HW = 1;$HD = 4;}
+		}
+		case(state_3){
+			if($ptext[0] == 0 ){$nextState = state_5; $trans = state_3.".".state_5; $HW = 1;$HD = 3;}
+		}
+		case(state_4){
+			if($ptext[0] == 0 ){$nextState = state_8; $trans = state_4.".".state_8; $HW = 2;$HD = 3;}
+		}
+		case(state_5){
+			if($ptext[0] == 0 ){$nextState = state_8; $trans = state_5.".".state_8; $HW = 2;$HD = 1;}
+		}
+		case(state_6){
+			if($ptext[0] == 0 ){$nextState = state_13; $trans = state_6.".".state_13; $HW = 1;$HD = 2;}
+		}
+		case(state_7){
+			if($ptext[0] == 0 ){$nextState = state_4; $trans = state_7.".".state_4; $HW = 1;$HD = 2;}
+		}
+		case(state_8){
+			if($ptext[0] == 0 ){$nextState = state_1; $trans = state_8.".".state_1; $HW = 3;$HD = 3;}
+		}
+		case(state_9){
+			if($ptext[0] == 0 ){$nextState = state_4; $trans = state_9.".".state_4; $HW = 1;$HD = 1;}
+		}
+		case(state_10){
+			if($ptext[0] == 0 ){$nextState = state_1; $trans = state_10.".".state_1; $HW = 3;$HD = 4;}
+		}
+		case(state_11){
+			if($ptext[0] == 0 ){$nextState = state_3; $trans = state_11.".".state_3; $HW = 4;$HD = 4;}
+		}
+		case(state_12){
+			if($ptext[0] == 0 ){$nextState = state_4; $trans = state_12.".".state_4; $HW = 1;$HD = 3;}
+		}
+		case(state_13){
+			if($ptext[0] == 0 ){$nextState = state_5; $trans = state_13.".".state_5; $HW = 1;$HD = 2;}
+		}
+		case(state_14){
+			if($ptext[0] == 0 ){$nextState = state_3; $trans = state_14.".".state_3; $HW = 4;$HD = 2;}
+		}
+		case(state_15){
+			if($ptext[0] == 0 ){$nextState = state_4; $trans = state_15.".".state_4; $HW = 1;$HD = 1;}
+		}
+		case(state_1){
+			if($ptext[0] == 1 ){$nextState = state_9; $trans = state_1.".".state_9; $HW = 2;$HD = 3;}
+		}
+		case(state_2){
+			if($ptext[0] == 1 ){$nextState = state_3; $trans = state_2.".".state_3; $HW = 4;$HD = 1;}
+		}
+		case(state_3){
+			if($ptext[0] == 1 ){$nextState = state_6; $trans = state_3.".".state_6; $HW = 3;$HD = 1;}
+		}
+		case(state_4){
+			if($ptext[0] == 1 ){$nextState = state_11; $trans = state_4.".".state_11; $HW = 0;$HD = 1;}
+		}
+		case(state_5){
+			if($ptext[0] == 1 ){$nextState = state_12; $trans = state_5.".".state_12; $HW = 2;$HD = 3;}
+		}
+		case(state_6){
+			if($ptext[0] == 1 ){$nextState = state_14; $trans = state_6.".".state_14; $HW = 2;$HD = 3;}
+		}
+		case(state_7){
+			if($ptext[0] == 1 ){$nextState = state_15; $trans = state_7.".".state_15; $HW = 2;$HD = 3;}
+		}
+		case(state_8){
+			if($ptext[0] == 1 ){$nextState = state_2; $trans = state_8.".".state_2; $HW = 3;$HD = 1;}
+		}
+		case(state_9){
+			if($ptext[0] == 1 ){$nextState = state_3; $trans = state_9.".".state_3; $HW = 4;$HD = 2;}
+		}
+		case(state_10){
+			if($ptext[0] == 1 ){$nextState = state_2; $trans = state_10.".".state_2; $HW = 3;$HD = 2;}
+		}
+		case(state_11){
+			if($ptext[0] == 1 ){$nextState = state_4; $trans = state_11.".".state_4; $HW = 1;$HD = 1;}
+		}
+		case(state_12){
+			if($ptext[0] == 1 ){$nextState = state_3; $trans = state_12.".".state_3; $HW = 4;$HD = 2;}
+		}
+		case(state_13){
+			if($ptext[0] == 1 ){$nextState = state_6; $trans = state_13.".".state_6; $HW = 3;$HD = 2;}
+		}
+		case(state_14){
+			if($ptext[0] == 1 ){$nextState = state_7; $trans = state_14.".".state_7; $HW = 3;$HD = 3;}
+		}
+		case(state_15){
+			if($ptext[0] == 1 ){$nextState = state_6; $trans = state_15.".".state_6; $HW = 3;$HD = 1;}
+		}
+	}
+print "$trans\t$HW\t$HD\n";
+	$currState = $nextState;
+}#endwhile
+close(FILE);

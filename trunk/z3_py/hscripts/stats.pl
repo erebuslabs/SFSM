@@ -63,7 +63,8 @@ while(<$dfm>){
 		#e.g. MAX curr 
 		#my @qa = quantize(15, @data);
 		my @qa = linearq(15, @data);
-		$localstats->add_data(@data);
+		
+                $localstats->add_data(@data);
 		
 		push @maxcurr, $localstats->max(); #maxcurr holds maxcurr per round 
 		$slopmean = $localstats->mean();
@@ -306,7 +307,7 @@ foreach $model (@Models){
     my %mypdf = pdf(@{$model});
     my $mentropy = entropy(@{$model});
     print "\nModel PDF (e=$mentropy)::\n";
-    foreach my $key (sort keys %mypdf){
+    foreach my $key (sort {$a <=> $b} keys %mypdf){
 	print "$key, $mypdf{$key}\n";
 
     }    
@@ -348,7 +349,7 @@ foreach $model (@Models){
 
     print "\nPDF of stepped array (e=$mentropy) \@ idx = $maxcorridx ::\n";
 
-    foreach my $key (sort keys %mypdf){
+    foreach my $key (sort{$a <=> $b} keys %mypdf){
 	print "$key, $mypdf{$key}\n";
 
     }
@@ -359,11 +360,13 @@ foreach $model (@Models){
 
     my $mymi = MI(@steppedarray, @$model);
 #    my $maxmi = MI(@steppedarray, @steppedarray);
+
+
+##Relgate to function - then print to output_file
     print "\nMI= $mymi \n";#JPDF::\n";
     foreach my $key1 (sort keys %myjpdf){
-	print "\n $key1 | ";
+	print "\n $key1, ";
 	for my $key2 (sort keys %{$myjpdf{$key1}}){
-
 	    print "$myjpdf{$key1}{$key2}\t";
 	}
 
@@ -485,7 +488,7 @@ sub linearq{
    my($bits, @y) = (shift, @_);
    my ($min,$max) = minmax(@y);
    my $stepsize = ceil(($max-$min)/$bits);
-   return map{ ($_<=>0)*floor((abs($_)/$stepsize)+.5) }@y;
+   return map{ ($_<=>0)*floor((abs($_-$min)/$stepsize)+.5) }@y;
 }
 
 
@@ -519,7 +522,7 @@ sub ymarg($\@\@){
 sub pdf{
     #return pdf hash
     my(@datv) = @_; 
-    return map{ $_ => prob($_, @datv) } uniq(@datv);	
+    return map{ ($_+0) => prob($_, @datv) } uniq(@datv);	
 }
 
 sub jprob ($$\@\@){
@@ -554,8 +557,8 @@ sub MI(\@\@){
     my @xa = @{$xref};
     my @ya = @{$yref};
     my $count = 0;
-    foreach $xel (sort(uniq(@xa))){
-	foreach $yel (sort(uniq(@ya))){
+    foreach $xel ((uniq(@xa))){
+	foreach $yel ((uniq(@ya))){
 	    my $xy = jprob($xel, $yel, @xa, @ya);
 	    my $inner = $xy/(xmarg($xel,@xa,@ya)*ymarg($yel,@xa,@ya));
 #(prob($xel,@xa)*prob($yel,@ya));
