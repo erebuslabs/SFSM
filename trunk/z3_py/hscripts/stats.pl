@@ -11,6 +11,8 @@ use List::MoreUtils qw(uniq minmax);
 #use Math::GSL::Statistics qw /:all/;
 #use PDL::Stats::Basic;
 
+use File::Basename;
+
 use Statistics::Basic qw(:all nofill);
 sub jpdf (\@\@);
 sub jprob($$\@\@);
@@ -22,10 +24,12 @@ sub ymarg($\@\@);
 
 
 my $localstats = Statistics::Descriptive::Full->new();
-
 my ($datfile, $delay, $vectors, $clkperiod, $sampleRate, $oracle) = @ARGV; 
-
 my $runcompStats = 1;
+
+my $oh="";
+my $ov="";
+
 
 if($#ARGV < 4 || $#ARGV > 5){
     print "USAGE: ./stats.pl datafile delay numvectors clkper samplerate [oracle]\n";
@@ -44,7 +48,11 @@ my (@data, @row, @qrow);
 my $idx = 0;
 my $VecCnt = 0;
 my $tmpvectCnt = 0;
+##GRAB FILENAME to output all files with this ID
+my $basefile = fileparse($datfile, qr/\.[^.]*/);
+
 open(my $dfm, $datfile) or die("ack error - $!");
+
 my(@maxcurr, @meancurr);
 my $slopmean = 1;
 while(<$dfm>){
@@ -86,13 +94,39 @@ close $dfm;
 ### END READ DAT FILE and Construct###
 ################################################################################
 #Compute Agregate Stats for all entries
-print "\nStatisticts n=",($VecCnt-1);
+#print "\n$basefile, ($VecCnt-1), ";
+
+$oh .= "Base,";
+$ov .= "$basefile,";
+
+$oh .= "Vectors,";
+$ov .= "$VecCnt,"; 
+
+
+
+#print "\nStatisticts n=",($VecCnt-1);
 $localstats->add_data(@maxcurr);
-print "\nmax curr,",$localstats->max();
-print "\nmean max curr,",$localstats->mean(); 
+
+$oh .= "max curr,";
+$ov .= $localstats->max();
+$ov .= ",";
+
+$oh .= "min max curr,";
+$ov .= $localstats->min();
+$ov .=",";
+
+
+$oh .= "mean max curr,";
+$ov .= $localstats->mean();
+$ov .= ",";
+
 $localstats->clear();
 $localstats->add_data(@meancurr);
-print "\nmean curr,",$localstats->mean(); 
+
+$oh .= "mean mean curr,";
+$ov .= $localstats->mean(); $ov.=",";
+
+
 $localstats->clear();
 
 #### Handle the models
@@ -101,9 +135,10 @@ my @modelCorr;
 
 my $rndidx = 0;
 if($runcompStats==1){
-    print "\nRunning Stats based on Model File\n";
-    open(my $dfmodel, $oracle) or die("ack error - $!");
+    $oh .= "Type of Stats,";
+    $ov .= "model stats,";
 
+    open(my $dfmodel, $oracle) or die("ack error - $!");
     while(<$dfmodel>){
 	@mentry = split(/\s+/);
 	$rndidx++;	
@@ -118,19 +153,25 @@ if($runcompStats==1){
 	    }    
 
 	}
-	
-	
     }
-    print "Rounds in model used: ",$rndidx;
+    $oh .= "rounds used,";
+    $ov .= "$rndidx,"; 
+
     close $dfmodel;
+
 }
 else{
 ### TEMP FOR RAND VECTOR TESTING ONLY ###
-    print "\nRunning Stats based on Rand Data Models \n";
+    $oh .= "Type of Stats,";
+    $ov .= "rand stats,";
+
+
     my @rand = map { int(rand(4)+1 ) } (1..$VecCnt);
     push(@Models, [@rand]);
     @rand = map { int(rand(4)+1 ) } (1..$VecCnt);
     push(@Models, [@rand]);
+    $oh .= "rounds used,";
+    $ov .= "$VecCnt,"; 
 }
 
 
@@ -181,6 +222,8 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
     #compute the correlation for against each model
 #    my @qavec = quantize(15, @dpvec);
     my @qavec = linearq(15, @dpvec);
+    
+    
     foreach $model (@Models){
 	my $pearsons = 0;
 #	print "\nLength of Model ", scalar(@$model);
@@ -211,80 +254,112 @@ foreach $dpidx (0..($sampleRate*$clkperiod)-1){
 
 $localstats->clear();
 $localstats->add_data(@variance);
-print "\nMax variance,",$localstats->max(),", @",$localstats->maxdex();
+#print "\nMax variance,",$localstats->max(),", @",$localstats->maxdex();
+
+
+$oh .= "max variation,";
+$ov .= $localstats->max(); $ov.=","; 
+
+$oh .= "max variation location,";
+$ov .= $localstats->maxdex(); $ov.=",";
+ 
 $localstats->clear();
 $localstats->add_data(@kurtosis);
-print "\nMax kurtosis,",$localstats->max(),", @",$localstats->maxdex();
-print "\nMin kurtosis,",$localstats->min(),", @",$localstats->mindex();
+
+#print ",max kurtoisis,",$localstats->max(),", max kurtoisis loc,",$localstats->maxdex();
+
+$oh .= "max kurtosis,";
+$ov .= $localstats->max(); $ov.=","; 
+
+$oh .= "max kurtoisis location,";
+$ov .= $localstats->maxdex(); $ov.=",";
+
+#print "\nMax kurtosis,",$localstats->max(),", @",$localstats->maxdex();
+#print "\nMin kurtosis,",$localstats->min(),", @",$localstats->mindex();
 
 #Print / plot the correlation vectors for each model as well as the current variation
 
 
-my $plotCorrVecs = Graphics::GnuplotIF->new(
-    title => "Correlation Vectors with Current Variation",
-    style => "points", ylabel=> 'i variance',
-    y2label=> 'Correlation',
-    xlabel=> 'Datapoints ',
-    perrsist    => 1,
-    plot_also   => 1,
-    scriptfile  => "corrvec_curr_var_plot.cmds"
-    ) ;
+#my $plotCorrVecs = Graphics::GnuplotIF->new(
+#    title => "Correlation Vectors with Current Variation",
+#    style => "points", ylabel=> 'i variance',
+#    y2label=> 'Correlation',
+#    xlabel=> 'Datapoints ',
+#    perrsist    => 1,
+#    plot_also   => 1,
+#    scriptfile  => "${basefile}_corrvec_curr_var_plot.cmds"
+#    ) ;
 
-$plotCorrVecs->gnuplot_cmd('set y2label "Model"',
-		    "set y2range [-1:1]",
-		    'set y2tics border',
-		    #"set yrange [:]",
-		    'set grid',
-		    'set key outside bottom',
-		    #'set linestyle 1 lt 2 lw 3',
-			#'set key box linestyle 1',
-    );
+#$plotCorrVecs->gnuplot_cmd('set y2label "Model"',
+#		    "set y2range [-1:1]",
+#		    'set y2tics border',
+#		    #"set yrange [:]",
+#		    'set grid',
+#		    'set key outside bottom',
+#		    #'set linestyle 1 lt 2 lw 3',
+#			#'set key box linestyle 1',
+ #   );
 
-    #Create a generic X-axis
-    my @x = [0 .. $VecCnt];
+#Create a generic X-axis
+my @x = [0 .. $VecCnt];
 
-    #create hashes
-    my %dpvariance = ('x_values'=> @x, 
-		    'y_values'=>\@{$allQAVecs[618]}, 
-		    'style_spec' => "lines axes x1y1"); 
+#create hashes
+my %dpvariance = ('x_values'=> @x, 
+		  'y_values'=>\@{$allQAVecs[618]}, 
+		  'style_spec' => "lines axes x1y1"); 
 
-    my %model1 = ('x_values'=>@x,
-		  'y_values'=>\@{$Models[0]},
-		  'style_spec' => "lines axes x1y2");
+my %model1 = ('x_values'=>@x,
+	      'y_values'=>\@{$Models[0]},
+	      'style_spec' => "lines axes x1y2");
 
-    my %model2 = ('x_values'=>@x,
-		  'y_values'=>\@{$Models[1]},
-		  'style_spec' => "lines axes x1y2");
+my %model2 = ('x_values'=>@x,
+	      'y_values'=>\@{$Models[1]},
+	      'style_spec' => "lines axes x1y2");
 
-    my %model3 = ('x_values'=>@x,
-		  'y_values'=>\@{$Models[2]},
-		  'style_spec' => "lines axes x1y2");
-    my %model4 = ('x_values'=>@x,
-		  'y_values'=>\@{$Models[3]},
-		  'style_spec' => "lines axes x1y2");
-    
-    #Normalized DP vector
-my $fname = "varainceAndModelCorr.ps";
+my %model3 = ('x_values'=>@x,
+	      'y_values'=>\@{$Models[2]},
+	      'style_spec' => "lines axes x1y2");
+my %model4 = ('x_values'=>@x,
+	      'y_values'=>\@{$Models[3]},
+	      'style_spec' => "lines axes x1y2");
 
-$plotCorrVecs->gnuplot_hardcopy( $fname,
-			  'postscript color',
-			  'lw 2' );
+#Normalized DP vector
+my $fname = "$(basefile)_varainceAndModelCorr.ps";
+
+#$#plotCorrVecs->gnuplot_hardcopy( $fname,
+#			  'postscript color',
+#			  'lw 2' );
 
 #$plotCorrVecs->gnuplot_set_plot_titles("Variance", "ActualState", "ActualTran", "HW","HD");
-$plotCorrVecs->gnuplot_set_plot_titles("ActualState", "ActualTran", "HW","HD");
+#$plotCorrVecs->gnuplot_set_plot_titles("ActualState", "ActualTran", "HW","HD");
 #$plotCorrVecs->gnuplot_plot_xy_style(@x, \%dpvariance, \%model1, \%model2, \%model3, \%model4);
-$plotCorrVecs->gnuplot_plot_xy_style(@x, \%model1, \%model2, \%model3, \%model4);
-
-
-
+#$plotCorrVecs->gnuplot_plot_xy_style(@x, \%model1, \%model2, \%model3, \%model4);
 
 
 
 my @modelName = ("ACTUAL-STATE", "ACTUAL-TRANSITION", "HW-MODEL", "HD-MODEL");
+my @qntz_size = (scalar(uniq(@{$Models[0]})),scalar(uniq(@{$Models[1]})));
 #plot the point which has the maximum correlation between models and datapoint
 #TODO: Use the Maximum current variation location instead?
+
 my $modelidx = 0;
+
 foreach $model (@Models){
+    my $quantsize = scalar(uniq(@{$model}));
+
+    $oh .= "Model Type,";
+    $ov .= "$modelName[$modelidx],";
+    $oh .= "Uniq Values,";
+    $ov .= "$quantsize,";
+
+    if($quantsize <= 0){
+	$quantsize = $qntz_size[$modelidx%2];
+    }
+
+    $oh .= "Quantize Size,";
+    $ov .= "$quantsize,";
+
+
     $localstats->clear();
     $localstats->add_data(@{$model});    
 
@@ -294,38 +369,54 @@ foreach $model (@Models){
     
     $localstats->clear(); 
     $localstats->add_data(@{$modelCorr[$modelidx]});    
-    print "\nModel Correlation,".$modelName[$modelidx];
-    my $maxcorridx = $localstats->maxdex();
+    #print "\nModel Correlation,".$modelName[$modelidx];
 
-   my $mincorridx = $localstats->mindex();
+    my $maxcorridx = $localstats->maxdex();
+    my $mincorridx = $localstats->mindex();
     my $corrMin =$localstats->min();
     my $corrMax = $localstats->max();
 
-    print "\nMin,",$corrMin,",",$mincorridx;
-    print "\nMax,",$corrMax,",",$maxcorridx;
+    $oh .= "min corr,";
+    $ov .= "$corrMin,";
+    $oh .= "min corr loc,";
+    $ov .= "$mincorridx,";
+
+    $oh .= "max corr,";
+    $ov .= "$corrMax,";
+    $oh .= "max corr loc,";
+    $ov .= "$maxcorridx,";
+
+
+
+    #print "\nMin,",$corrMin,",",$mincorridx;
+    #print "\nMax,",$corrMax,",",$maxcorridx;
 
     my %mypdf = pdf(@{$model});
     my $mentropy = entropy(@{$model});
-    print "\nModel PDF (e=$mentropy)::\n";
-    foreach my $key (sort {$a <=> $b} keys %mypdf){
-	print "$key, $mypdf{$key}\n";
+#    print ",${modelName[${modelidx}]},entropy, $mentropy";
 
-    }    
+    $oh .= "entropy,";
+    $ov .= "$mentropy,";
 
-    my $title =  "Max Correlation ("
+#    foreach my $key (sort {$a <=> $b} keys %mypdf){
+#	print "$key, $mypdf{$key}\n";
+
+#    }    
+
+    my $title =  "$basefile \nMax Correlation ("
 	.$corrMax.") of "
 	.$modelName[$modelidx]
 	." and Datapoints at t=".$maxcorridx; 
 
-    my $plot1 = Graphics::GnuplotIF->new(
-	title => $title,
-	style => "points", ylabel=> 'Curr',
-	y2label=> 'Model',
-	xlabel=> 'Rounds ',
-	perrsist    => 1,
-	plot_also   => 1,
-	scriptfile  => "${modelidx}_plot.cmds"
-	) ;
+#    my $plot1 = Graphics::GnuplotIF->new(
+#	title => $title,
+#	style => "points", ylabel=> 'Curr',
+#	y2label=> 'Model',
+#	xlabel=> 'Rounds ',
+#	perrsist    => 1,
+#	plot_also   => 1,
+#	scriptfile  => "${basefile}_${modelName[${modelidx}]}_plot.cmds"
+#	) ;
 
 
 
@@ -338,21 +429,34 @@ foreach $model (@Models){
     
     #my @steppedarray = @{$allQAVecs[$maxcorridx]};
 #    my $model_el = ($MODEL_MAX - $MODEL_MIN)   
-    my @steppedarray = linearq(16, @activedpvector);
+    
+
+
+    my @steppedarray = linearq($quantsize, @activedpvector);
+
+
     $localstats->add_data(@activedpvector);
     my $DPMAX = $localstats->max();
     my $DPMIN = $localstats->min();
   
+    $mentropy = entropy(@activedpvector);
+    $oh .= "Current Entropy,";
+    $ov .= "$mentropy,";
 
     %mypdf = pdf(@steppedarray);
-    my $mentropy = entropy(@steppedarray);
+    $mentropy = entropy(@steppedarray);
+#    print ",current entropy, $mentropy";
+ 
+   
+    $oh .= "Quantized Current Entropy,";
+    $ov .= "$mentropy,";
 
-    print "\nPDF of stepped array (e=$mentropy) \@ idx = $maxcorridx ::\n";
+#    print "\nPDF of stepped array (e=$mentropy) \@ idx = $maxcorridx ::\n";
 
-    foreach my $key (sort{$a <=> $b} keys %mypdf){
-	print "$key, $mypdf{$key}\n";
+ #   foreach my $key (sort{$a <=> $b} keys %mypdf){
+#	print "$key, $mypdf{$key}\n";
 
-    }
+#    }
 
 
     my %myjpdf = ();
@@ -360,34 +464,36 @@ foreach $model (@Models){
 
     my $mymi = MI(@steppedarray, @$model);
 #    my $maxmi = MI(@steppedarray, @steppedarray);
-
+    $oh .= "Mutual Information,";
+    $ov .= "$mymi,";
 
 ##Relgate to function - then print to output_file
-    print "\nMI= $mymi \n";#JPDF::\n";
-    foreach my $key1 (sort keys %myjpdf){
-	print "\n $key1, ";
-	for my $key2 (sort keys %{$myjpdf{$key1}}){
-	    print "$myjpdf{$key1}{$key2}\t";
-	}
+ #   print ",${modelName[${modelidx}]},$mymi";#JPDF::\n";
+#    foreach my $key1 (sort keys %myjpdf){
+#	print "\n $key1, ";
+#	for my $key2 (sort keys %{$myjpdf{$key1}}){
+#	    print "$myjpdf{$key1}{$key2}\t";
+#	}
 
-    }
-    print3D($modelName[$modelidx], hh2aa(%myjpdf));
+#    }
+    my $fstringname = "${basefile}_$modelName[$modelidx]";
+#   print3D($fstringname, hh2aa(%myjpdf));
     undef(%myjpdf);
 
     my $DATAMIN = min(@activedpvector);
     my $DATAMAX = max(@activedpvector);
 
     ####PRINTING STUFF FOLLOWS#########
-    $plot1->gnuplot_cmd('set y2label "Model"',
-#			"set y2range [$MODELMIN:$MODELMAX]",
-			'set y2tics border',
-#			"set yrange [$DATAMIN:$DATAMAX]",
-                        #"set yrange [:]",
-			'set grid',
-			'set key outside bottom',
-			#'set linestyle 1 lt 2 lw 3',
-			#'set key box linestyle 1',
-	);
+#    $plot1->gnuplot_cmd('set y2label "Model"',
+##			"set y2range [$MODELMIN:$MODELMAX]",
+#			'set y2tics border',
+##			"set yrange [$DATAMIN:$DATAMAX]",
+#                       #"set yrange [:]",
+#			'set grid',
+#			'set key outside bottom',
+#			#'set linestyle 1 lt 2 lw 3',
+#			#'set key box linestyle 1',
+#	);
 
     
     #print out model and the data vector it correlated too
@@ -417,12 +523,13 @@ foreach $model (@Models){
     my $fname = $modelName[$modelidx].".ps";
 
 
-    $plot1->gnuplot_hardcopy( $fname,
-                            'postscript color',
-                            'lw 2' );
+#    $plot1->gnuplot_hardcopy( $fname,
+#                            'postscript color',
+#                            'lw 2' );
 
-    $plot1->gnuplot_set_plot_titles("Datapoints", "Model", "Binned");
-   $plot1->gnuplot_plot_xy(@x, \@{$model}, \@steppedarray);
+#    $plot1->gnuplot_set_plot_titles("Datapoints", "Model", "Binned");
+#   $plot1->gnuplot_plot_xy(@x, \@{$model}, \@steppedarray);
+
 #   $plot1->gnuplot_plot_xy(\@x, \@steppedarray, \@activedpvector);
 #$plot1->gnuplot_plot_xy(\@steppedarray, \@activedpvector);
     ####END PRINTING GRAPHICS STUFF#######
@@ -430,8 +537,10 @@ foreach $model (@Models){
 
     $localstats->clear();
     $modelidx++;
-    print "\n";
+#    print "\n";
 }
+print "$oh\n";
+print "$ov\n";
 
 sub print3D{ 
     my($name,@printable) = (shift, @_);
@@ -593,3 +702,4 @@ sub entropy{
 sub log2{
     return log(shift)/log(2);
 }
+
