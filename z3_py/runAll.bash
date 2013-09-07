@@ -1,13 +1,21 @@
 #!/bin/bash
 
+resloc="genben_new"
+mkdir $resloc;
+mkdir $resloc/python;
+mkdir $resloc/raw;
+mkdir $resloc/final;
+mkdir $resloc/verilog;
+
+
 for file in $@; do
     base=${file:0:${#file}-6};
     search_dist=30;
     hdon=1;
-    hwon=1;
-    hd_val=2;
+    hwon=0;
+    hd_val=0;
     hw_val=0;
-    timeout=10000000;
+    mtimeout=1000000;
     
     optstring="_hw_"$hwon"_hd_"$hdon"_hwVal_"$hw_val"_hdVal_"$hd_val;
     
@@ -25,9 +33,9 @@ for file in $@; do
     echo " "
     echo "v=v=v==========$base=============v=v=v"
     echo "Converting the $base file";
-    ./hscripts/exlz3py.pl $file $search_dist $hwon $hdon $hw_val $hd_val $timeout > $pythres
+    ./hscripts/exlz3py.pl $file $search_dist $hwon $hdon $hw_val $hd_val $mtimeout > $pythres
     echo "Running Z3 theorem prover on $pythres";
-    (time (timeout 250000 python $pythres > $satres;)) 2>&1
+    ( python $pythres > $satres;) 2>&1
     echo "Converting result to binary";
     ./hscripts/z3toBin.pl $satres > $final;
     
@@ -35,17 +43,17 @@ for file in $@; do
     ./hscripts/createSassign.pl $satres > $verstassign
 
     echo "moving $pythres results/python/.";
-    mv $pythres results/python/.;
+    mv $pythres $resloc/python/.;
     echo "moving $satres results/raw/.";
-    mv $satres results/raw/.;
+    mv $satres $resloc/raw/.;
     echo "moving $final results/final/.";
-    mv $final results/final/.;
+    mv $final $resloc/final/.;
 
     echo "moving $vermain results/verilog/.";
-    mv $vermain results/verilog/.;
+    mv $vermain $resloc/verilog/.;
 
     echo "moving $final results/verilog/.";
-    mv $verstassign results/verilog/.;
+    mv $verstassign $resloc/verilog/.;
 
 
     echo "^=^=^==========$base=============^=^=^"
