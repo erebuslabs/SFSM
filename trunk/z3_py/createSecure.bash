@@ -1,29 +1,29 @@
 #/usr/bin/bash
 
-
+loc="ben_new_s/";
 for file in $@; do
     base=${file%%.*}; #"/data.exl" ;
     secfile=$base"_s.kiss2";
     
-    gv=$base".gv";
-    sgv=$base"_s.gv";
+  #  gv=$base".gv";
+  #  sgv=$base"_s.gv";
 
-    dot=$base".png";
-    sdot=$base"_s.png";
+#    dot=$base".png";
+ #   sdot=$base"_s.png";
 
     echo " "
     echo "v=v=v==========$base=============v=v=v"
     echo "Converting the $base file to secure $secfile";
     ./hscripts/exl2Secexl.pl $file > $secfile
-    echo "Converting both files to dot file";
-    echo "=Converting the $base file to $gv";
+#    echo "Converting both files to dot file";
+#    echo "=Converting the $base file to $gv";
 #    ./hscripts/exl2dot.pl $base > $gv;
-    echo "=Converting the $secfile file to  $sgv";
+#    echo "=Converting the $secfile file to  $sgv";
 #    ./hscripts/exl2dot.pl $secfile > $sgv;
-    echo "Converting $gv to $dot";
+#    echo "Converting $gv to $dot";
 #   neato -Tpng $gv -o $dot 
 
-    echo "Converting $sgv to $sdot";
+ #   echo "Converting $sgv to $sdot";
 #    dot -Tpng $sgv -o $sdot 
 
 
