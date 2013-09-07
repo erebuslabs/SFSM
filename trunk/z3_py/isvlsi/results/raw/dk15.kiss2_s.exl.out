@@ -1,0 +1,10 @@
+Sat, 7, st_state4, st_state2, st_state2_n, st_state3_n, st_state1, st_state1_n, st_state3,  
+ASSIGN, 7, 47, 62, 55, 93, 31, 79, 61,  
+Sat, 6, st_state4, st_state2, st_state2_n, st_state3_n, st_state1, st_state1_n, st_state3,  
+ASSIGN, 6, 20, 36, 5, 18, 12, 10, 6,  
+Sat, 5, st_state4, st_state2, st_state2_n, st_state3_n, st_state1, st_state1_n, st_state3,  
+ASSIGN, 5, 9, 3, 18, 20, 17, 24, 5,  
+NotSat, 4,  
+ 
+NotSat, 3,  
+ 
