@@ -3,6 +3,9 @@
 use POSIX qw(ceil);
 use List::Util qw(sum);
 
+####USAGE: provide 3 parameters: number of states, self-loop percentage (0-100), connection percent freq (0-100)
+#### ./genFSMBen.pl STATES SLPER CONPER > OUT.exl
+
 my ($states, $slpercent, $connectfeq) = (shift, shift, shift);
 
 my @connectMatrix;
